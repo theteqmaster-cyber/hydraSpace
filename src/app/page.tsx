@@ -73,7 +73,7 @@ function HomeContent() {
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
+        <Header onCreateCourse={() => setIsCreateCourseModalOpen(true)} />
         
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <motion.div
@@ -172,8 +172,8 @@ function HomeContent() {
                 >
                   <CourseCard
                     course={course}
-                    notesCount={course.notesCount || 0}
-                    sharedCount={course.sharedCount || 0}
+                    notesCount={(course as any).notesCount || 0}
+                    sharedCount={(course as any).sharedCount || 0}
                     onClick={() => handleCourseClick(course)}
                   />
                 </motion.div>
@@ -214,32 +214,37 @@ function HomeContent() {
       />
 
       {isNoteEditorOpen && selectedCourse && (
-        <NoteEditor
-          courseId={selectedCourse.id}
-          onSave={async (noteData) => {
-            try {
-              if (noteData.id) {
-                // Update existing note
-                const { updateNote } = await import('@/lib/notes')
-                await updateNote(noteData.id, noteData)
-              } else {
-                // Create new note
-                const { createNote } = await import('@/lib/notes')
-                await createNote({
-                  ...noteData,
-                  user_id: user!.id,
-                  course_id: selectedCourse.id
-                })
-              }
-              console.log('Note saved successfully')
-              setIsNoteEditorOpen(false)
-            } catch (error) {
-              console.error('Error saving note:', error)
-              // Show error to user
-            }
-          }}
-          onCancel={() => setIsNoteEditorOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <NoteEditor
+              courseId={selectedCourse.id}
+              onSave={async (noteData) => {
+                try {
+                  if (noteData.id) {
+                    // Update existing note
+                    const { updateNote } = await import('@/lib/notes')
+                    await updateNote(noteData.id, noteData)
+                  } else {
+                    // Create new note
+                    const { createNote } = await import('@/lib/notes')
+                    await createNote({
+                      ...noteData,
+                      user_id: user!.id,
+                      course_id: selectedCourse.id,
+                      type: noteData.type || 'lecture'
+                    } as any)
+                  }
+                  console.log('Note saved successfully')
+                  setIsNoteEditorOpen(false)
+                } catch (error) {
+                  console.error('Error saving note:', error)
+                  // Show error to user
+                }
+              }}
+              onCancel={() => setIsNoteEditorOpen(false)}
+            />
+          </div>
+        </div>
       )}
     </div>
   )

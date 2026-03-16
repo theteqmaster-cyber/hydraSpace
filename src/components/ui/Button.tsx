@@ -1,8 +1,12 @@
 import { motion } from 'framer-motion'
-import { cn } from '@/lib/utils'
+
+// Simple utility function for className merging
+function simpleCn(...classes: (string | undefined)[]) {
+  return classes.filter(Boolean).join(' ')
+}
 
 interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onDrag'> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline'
   size?: 'sm' | 'md' | 'lg'
   children: React.ReactNode
 }
@@ -20,7 +24,8 @@ export const Button = ({
     primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
     secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500',
     ghost: 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:ring-gray-500',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
+    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+    outline: 'border-2 border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500'
   }
   
   const sizes = {
@@ -31,7 +36,7 @@ export const Button = ({
 
   return (
     <motion.button
-      className={cn(baseClasses, variants[variant], sizes[size], className)}
+      className={simpleCn(baseClasses, variants[variant], sizes[size], className)}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.15 }}

@@ -241,11 +241,11 @@ export const NoteEditor = ({
         </div>
       </div>
 
-      {/* Footer */}
+      {/* Footer actions */}
       <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
         <div className="flex justify-between">
           <Button variant="ghost" onClick={handleCancel}>
-            Cancel
+            Close
           </Button>
           <div className="flex space-x-2">
             <Button
