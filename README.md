@@ -1,8 +1,6 @@
 # hydraSpace
 an online note taking app for the nust student , made by hydra
-Below is a **clean, structured proposal** that includes everything we discussed, including the **moderation/report system**. This format is closer to something you could show lecturers, collaborators, or early investors. 🚀
 
----
 
 # Project Proposal
 
