@@ -14,7 +14,7 @@ Prepared by: **mphathisi Ndlovu**
 
 # 1. Executive Summary
 
-The ** NUST HydraSpace  Academic Hub** is a digital productivity platform designed specifically for university students. The platform helps students organize academic life by combining structured course notes, lecture scheduling, and collaborative knowledge sharing into one unified system.
+The **NUST HydraSpace  Academic Hub** is a digital productivity platform designed specifically for university students. The platform helps students organize academic life by combining structured course notes, lecture scheduling, and collaborative knowledge sharing into one unified system.
 
 While existing tools such as Notion and Google Keep offer general note-taking capabilities, they are not optimized for the structured workflows that university students experience daily.
 
