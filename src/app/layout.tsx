@@ -1,4 +1,4 @@
-import { Metadata } from 'next'
+import { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
@@ -10,6 +10,22 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'HydraSpace - Your Digital Academic Workspace',
   description: 'Organize, collaborate, and excel with HydraSpace - the ultimate note-taking platform for university students.',
+  applicationName: 'HydraSpace',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'HydraSpace',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#2563eb',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
