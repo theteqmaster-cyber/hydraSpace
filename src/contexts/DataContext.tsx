@@ -166,7 +166,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [user])
 
-  const updateLocalData = (type: 'courses' | 'notes' | 'sharedNotes' | 'events', data: any[]) => {
+  const updateLocalData = (type: 'courses' | 'notes' | 'sharedNotes' | 'events' | 'timetable', data: any[]) => {
     switch (type) {
       case 'courses':
         setCourses(data)
