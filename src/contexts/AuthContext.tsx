@@ -17,8 +17,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      console.log('Initializing auth...')
       try {
         const currentUser = await getCurrentUser()
+        console.log('Current user:', currentUser)
         setUser(currentUser)
       } catch (error) {
         console.error('Error initializing auth:', error)
@@ -30,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth()
 
     const { data: { subscription } } = onAuthStateChange((user) => {
+      console.log('Auth context received user:', user)
       setUser(user)
       setIsLoading(false)
     })

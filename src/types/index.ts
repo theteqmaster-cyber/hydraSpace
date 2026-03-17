@@ -12,6 +12,9 @@ export interface Course {
   name: string
   code?: string
   description?: string
+  color?: string
+  is_archived?: boolean
+  archived_at?: string
   created_at: string
   updated_at: string
 }

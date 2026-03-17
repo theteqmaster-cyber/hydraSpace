@@ -1,14 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Search, Menu, X, Plus, BookOpen, Users, Calendar, Clock, FileText, Settings, HelpCircle } from 'lucide-react'
+import { Plus, Calendar, Users, BookOpen, Menu, X, Archive, Search, Clock, FileText, Settings, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { useAuth } from '@/contexts/AuthContext'
-import Link from 'next/link'
 
 interface HeaderProps {
   onCreateCourse?: () => void; // Making it optional
@@ -25,6 +25,14 @@ export const Header = ({ onCreateCourse }: HeaderProps) => {
       // Navigate to search results
       window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`
     }
+  }
+
+  const handleNavigation = (path: string) => {
+    if (!user) {
+      setIsSearchOpen(true)
+      return
+    }
+    window.location.href = path
   }
 
   return (
@@ -60,24 +68,30 @@ export const Header = ({ onCreateCourse }: HeaderProps) => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-4">
-            <Link href="/courses">
-              <Button variant="ghost" size="sm">
-                <BookOpen className="w-4 h-4 mr-2" />
-                Courses
-              </Button>
-            </Link>
-            <Link href="/community">
-              <Button variant="ghost" size="sm">
-                <Users className="w-4 h-4 mr-2" />
-                Community
-              </Button>
-            </Link>
-            <Link href="/calendar">
-              <Button variant="ghost" size="sm">
-                <Calendar className="w-4 h-4 mr-2" />
-                Calendar
-              </Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => handleNavigation("/courses")}
+            >
+              <BookOpen className="w-4 h-4 mr-2" />
+              {user ? "Courses" : "Sign In to View Courses"}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => handleNavigation("/community")}
+            >
+              <Users className="w-4 h-4 mr-2" />
+              {user ? "Community" : "Sign In to View Community"}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => handleNavigation("/calendar")}
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              {user ? "Calendar" : "Sign In to View Calendar"}
+            </Button>
             {user ? (
               <Button onClick={onCreateCourse} size="sm">
                 <Plus className="w-4 h-4 mr-2" />
@@ -113,24 +127,30 @@ export const Header = ({ onCreateCourse }: HeaderProps) => {
           transition={{ duration: 0.2 }}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-2">
-            <Link href="/courses" className="block">
-              <Button variant="ghost" className="w-full justify-start">
-                <BookOpen className="w-4 h-4 mr-2" />
-                Courses
-              </Button>
-            </Link>
-            <Link href="/community" className="block">
-              <Button variant="ghost" className="w-full justify-start">
-                <Users className="w-4 h-4 mr-2" />
-                Community
-              </Button>
-            </Link>
-            <Link href="/calendar" className="block">
-              <Button variant="ghost" className="w-full justify-start">
-                <Calendar className="w-4 h-4 mr-2" />
-                Calendar
-              </Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start"
+              onClick={() => handleNavigation("/courses")}
+            >
+              <BookOpen className="w-4 h-4 mr-2" />
+              {user ? "Courses" : "Sign In to View Courses"}
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start"
+              onClick={() => handleNavigation("/community")}
+            >
+              <Users className="w-4 h-4 mr-2" />
+              {user ? "Community" : "Sign In to View Community"}
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start"
+              onClick={() => handleNavigation("/calendar")}
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              {user ? "Calendar" : "Sign In to View Calendar"}
+            </Button>
             {user && (
               <Button onClick={onCreateCourse} className="w-full justify-start">
                 <Plus className="w-4 h-4 mr-2" />

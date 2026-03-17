@@ -1,7 +1,18 @@
 import { supabase } from './supabase'
 import { Note } from '@/types'
 
-export const getNotes = async (courseId: string): Promise<Note[]> => {
+export const getNotes = async (userId: string): Promise<Note[]> => {
+  const { data, error } = await supabase
+    .from('notes')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data || []
+}
+
+export const getNotesForCourse = async (courseId: string): Promise<Note[]> => {
   const { data, error } = await supabase
     .from('notes')
     .select('*')

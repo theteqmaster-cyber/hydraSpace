@@ -74,10 +74,13 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
 
 export const onAuthStateChange = (callback: (user: AuthUser | null) => void) => {
   return supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log('Auth state changed:', event, session?.user?.id)
     if (session?.user) {
       const profile = await getCurrentUser()
+      console.log('User profile loaded:', profile)
       callback(profile)
     } else {
+      console.log('User signed out')
       callback(null)
     }
   })

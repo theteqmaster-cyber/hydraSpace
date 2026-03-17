@@ -1,34 +1,32 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { AuthProvider } from '@/contexts/AuthContext'
+import { DataProvider } from '@/contexts/DataContext'
+import { AuthDebug } from '@/components/auth/AuthDebug'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "HydraSpace - Your Digital Academic Workspace",
-  description: "Organize courses, take structured notes, and collaborate with peers. Built for university students by university students.",
-};
+  title: 'HydraSpace - Your Digital Academic Workspace',
+  description: 'Organize, collaborate, and excel with HydraSpace - the ultimate note-taking platform for university students.',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className={inter.className}>
+        <AuthProvider>
+          <DataProvider>
+            {children}
+            {process.env.NODE_ENV === 'development' && <AuthDebug />}
+          </DataProvider>
+        </AuthProvider>
       </body>
     </html>
-  );
+  )
 }

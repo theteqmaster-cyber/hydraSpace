@@ -5,10 +5,13 @@ import { motion } from 'framer-motion'
 import { Save, Share2, Eye, EyeOff, FileText, BookOpen, AlertCircle, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Note } from '@/types'
+import { Note, Course } from '@/types'
 
 interface NoteEditorProps {
+  isOpen: boolean
   note?: Note
+  course?: Course | null
+  courses: Course[]
   courseId: string
   onSave: (note: Partial<Note>) => Promise<void>
   onCancel: () => void
@@ -16,6 +19,8 @@ interface NoteEditorProps {
 
 export const NoteEditor = ({ 
   note, 
+  course,
+  courses,
   courseId, 
   onSave, 
   onCancel 

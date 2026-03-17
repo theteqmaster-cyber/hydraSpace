@@ -1,56 +1,43 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Footer } from '@/components/layout/Footer'
-import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { useData } from '@/contexts/DataContext'
 import { Note } from '@/types'
 import { Search, BookOpen, FileText, AlertCircle, CheckCircle, User, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 
 function CommunityPageContent() {
-  const [sharedNotes, setSharedNotes] = useState<Note[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [isSearching, setIsSearching] = useState(false)
   const { user } = useAuth()
-
-  useEffect(() => {
-    loadSharedNotes()
-  }, [])
-
-  const loadSharedNotes = async () => {
-    try {
-      setIsLoading(true)
-      const { getSharedNotes } = await import('@/lib/notes')
-      const notes = await getSharedNotes(20, 0)
-      setSharedNotes(notes)
-    } catch (error) {
-      console.error('Error loading shared notes:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const { sharedNotes, isLoading } = useData()
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
-      loadSharedNotes()
+      setSearchResults([])
       return
     }
 
+    setIsSearching(true)
     try {
-      setIsLoading(true)
       const { searchNotes } = await import('@/lib/notes')
-      const notes = await searchNotes(searchQuery, user?.id)
-      setSharedNotes(notes)
+      const results = await searchNotes(searchQuery, user?.id)
+      setSearchResults(results)
     } catch (error) {
       console.error('Error searching notes:', error)
     } finally {
-      setIsLoading(false)
+      setIsSearching(false)
     }
   }
+
+  const displayNotes = searchQuery ? searchResults : sharedNotes
 
   const getNoteIcon = (type: string) => {
     switch (type) {
@@ -99,13 +86,13 @@ function CommunityPageContent() {
                   className="flex-1"
                   icon={<Search className="w-5 h-5 text-gray-400" />}
                 />
-                <Button onClick={handleSearch} disabled={isLoading}>
-                  Search
+                <Button onClick={handleSearch} disabled={isLoading || isSearching}>
+                  {isSearching ? 'Searching...' : 'Search'}
                 </Button>
               </div>
             </div>
 
-            {isLoading ? (
+            {(isLoading || isSearching) ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center mx-auto mb-4 animate-pulse">
                   <div className="w-8 h-8 bg-gray-300 rounded-lg"></div>
@@ -114,7 +101,7 @@ function CommunityPageContent() {
               </div>
             ) : (
               <>
-                {sharedNotes.length === 0 ? (
+                {displayNotes.length === 0 ? (
                   <motion.div
                     className="text-center py-12"
                     initial={{ opacity: 0 }}
@@ -135,7 +122,7 @@ function CommunityPageContent() {
                   </motion.div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {sharedNotes.map((note, index) => {
+                    {displayNotes.map((note, index) => {
                       const Icon = getNoteIcon(note.type)
                       return (
                         <motion.div
@@ -145,8 +132,7 @@ function CommunityPageContent() {
                           transition={{ delay: index * 0.1 }}
                           className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
                           onClick={() => {
-                            // Expand note details
-                            alert(`Note: ${note.title}\n\nType: ${note.type}\n\nAuthor: ${(note as any).users?.name || 'Anonymous'}\n\nCourse: ${(note as any).courses?.name || 'N/A'}\n\nCreated: ${formatDate(note.created_at)}\n\nContent: ${note.content}`)
+                            console.log('Note clicked:', note.title)
                           }}
                         >
                           <div className="flex items-start justify-between mb-4">
@@ -170,7 +156,7 @@ function CommunityPageContent() {
                           <div className="flex items-center justify-between text-sm text-gray-500">
                             <div className="flex items-center space-x-1">
                               <User className="w-4 h-4" />
-                              <span>{(note as any).users?.name || 'Anonymous'}</span>
+                              <span>{note.users?.name || 'Anonymous'}</span>
                             </div>
                             <div className="flex items-center space-x-1">
                               <Calendar className="w-4 h-4" />
@@ -178,10 +164,10 @@ function CommunityPageContent() {
                             </div>
                           </div>
 
-                          {(note as any).courses && (
+                          {note.courses && (
                             <div className="mt-3 pt-3 border-t border-gray-100">
                               <span className="text-xs text-gray-500">
-                                {(note as any).courses?.code} - {(note as any).courses?.name}
+                                {note.courses?.code} - {note.courses?.name}
                               </span>
                             </div>
                           )}
@@ -208,9 +194,5 @@ function CommunityPageContent() {
 }
 
 export default function CommunityPage() {
-  return (
-    <AuthProvider>
-      <CommunityPageContent />
-    </AuthProvider>
-  )
+  return <CommunityPageContent />
 }

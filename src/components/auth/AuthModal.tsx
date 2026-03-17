@@ -37,6 +37,10 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }: AuthModalProps) =>
       } else {
         await signIn(formData.email, formData.password)
       }
+      
+      // Wait a moment for auth state to update
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
       onAuthSuccess()
       onClose()
     } catch (err: any) {

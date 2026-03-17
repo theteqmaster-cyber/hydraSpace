@@ -9,21 +9,22 @@ import {
   Calendar, 
   Clock,
   FileText,
-  Settings,
   HelpCircle
 } from 'lucide-react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 export const Sidebar = () => {
+  const pathname = usePathname()
+
   const menuItems = [
-    { icon: Home, label: 'Dashboard', href: '/', active: true },
-    { icon: BookOpen, label: 'Courses', href: '/courses', active: false },
-    { icon: Users, label: 'Community', href: '/community', active: false },
-    { icon: Calendar, label: 'Calendar', href: '/calendar', active: false },
-    { icon: Clock, label: 'Timetable', href: '/timetable', active: false },
-    { icon: FileText, label: 'Notes', href: '/notes', active: false },
-    { icon: Settings, label: 'Settings', href: '/settings', active: false },
-    { icon: HelpCircle, label: 'Help', href: '/help', active: false },
+    { href: '/', icon: Home, label: 'Dashboard', active: pathname === '/' },
+    { href: '/courses', icon: BookOpen, label: 'Courses', active: pathname === '/courses' },
+    { href: '/community', icon: Users, label: 'Community', active: pathname === '/community' },
+    { href: '/calendar', icon: Calendar, label: 'Calendar', active: pathname === '/calendar' },
+    { href: '/timetable', icon: Clock, label: 'Timetable', active: pathname === '/timetable' },
+    { href: '/notes', icon: FileText, label: 'Notes', active: pathname === '/notes' },
+    { href: '/help', icon: HelpCircle, label: 'Help', active: pathname === '/help' },
   ]
 
   const quickStats = [

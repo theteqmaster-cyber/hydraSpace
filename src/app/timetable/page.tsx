@@ -5,124 +5,127 @@ import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Footer } from '@/components/layout/Footer'
-import { AuthProvider, useAuth } from '@/contexts/AuthContext'
-import { Calendar, Clock, Plus, Edit, Trash2 } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { useData } from '@/contexts/DataContext'
+import { TimetableEditor } from '@/components/timetable/TimetableEditor'
+import { 
+  Clock, 
+  Plus, 
+  BookOpen, 
+  MapPin, 
+  Beaker,
+  Users
+} from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 
 interface TimetableEntry {
   id: string
-  course_name: string
-  day_of_week: string
-  start_time: string
-  end_time: string
-  room: string
-  type: 'lecture' | 'lab' | 'tutorial'
-  created_at: string
-  updated_at: string
+  course_id?: string
+  course_name?: string
+  course_code?: string
+  day: string
+  time: string
+  duration: string
+  type: 'lecture' | 'tutorial' | 'lab'
+  location: string
+  color?: string
 }
 
 function TimetablePageContent() {
-  const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const { user } = useAuth()
+  const { courses } = useData()
+  const [selectedDay, setSelectedDay] = useState('Monday')
+  const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const [selectedEntry, setSelectedEntry] = useState<TimetableEntry | null>(null)
+  const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([])
 
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-  const timeSlots = [
-    '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
-  ]
-
+  // Load timetable entries from localStorage on mount
   useEffect(() => {
-    if (user) {
-      loadTimetable()
-    } else {
-      setTimetableEntries([])
-      setIsLoading(false)
+    const savedEntries = localStorage.getItem('hydraspace_timetable_entries')
+    if (savedEntries) {
+      setTimetableEntries(JSON.parse(savedEntries))
     }
-  }, [user])
+  }, [])
 
-  const loadTimetable = async () => {
+  // Save to localStorage whenever entries change
+  useEffect(() => {
+    localStorage.setItem('hydraspace_timetable_entries', JSON.stringify(timetableEntries))
+  }, [timetableEntries])
+
+  const handleAddEntry = () => {
+    setSelectedEntry(null)
+    setIsEditorOpen(true)
+  }
+
+  const handleEditEntry = (entry: TimetableEntry) => {
+    setSelectedEntry(entry)
+    setIsEditorOpen(true)
+  }
+
+  const handleSaveEntry = async (entryData: Omit<TimetableEntry, 'id'>) => {
     try {
-      setIsLoading(true)
-      // For now, we'll use mock data since we haven't implemented the full timetable API
-      const mockEntries: TimetableEntry[] = [
-        {
-          id: '1',
-          course_name: 'Database Systems',
-          day_of_week: 'Monday',
-          start_time: '09:00',
-          end_time: '10:30',
-          room: 'Lab 201',
-          type: 'lecture',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          course_name: 'Data Structures',
-          day_of_week: 'Tuesday',
-          start_time: '11:00',
-          end_time: '12:30',
-          room: 'Room 105',
-          type: 'lecture',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+      if (selectedEntry?.id) {
+        // Update existing entry
+        setTimetableEntries(prev => 
+          prev.map(entry => 
+            entry.id === selectedEntry.id 
+              ? { ...entryData, id: selectedEntry.id }
+              : entry
+          )
+        )
+      } else {
+        // Create new entry
+        const newEntry: TimetableEntry = {
+          ...entryData,
+          id: Date.now().toString()
         }
-      ]
-      setTimetableEntries(mockEntries)
+        setTimetableEntries(prev => [...prev, newEntry])
+      }
+      
+      setIsEditorOpen(false)
+      setSelectedEntry(null)
     } catch (error) {
-      console.error('Error loading timetable:', error)
-    } finally {
-      setIsLoading(false)
+      console.error('Error saving timetable entry:', error)
+      throw error
     }
   }
 
-  const getEntryForSlot = (day: string, time: string) => {
-    return timetableEntries.find(entry => 
-      entry.day_of_week === day && 
-      entry.start_time === time
-    )
+  const handleDeleteEntry = (id: string) => {
+    if (confirm('Are you sure you want to delete this timetable entry?')) {
+      setTimetableEntries(prev => prev.filter(entry => entry.id !== id))
+    }
+  }
+
+  const getEntryIcon = (type: string) => {
+    switch (type) {
+      case 'lecture': return BookOpen
+      case 'tutorial': return Users
+      case 'lab': return Beaker
+      default: return Clock
+    }
   }
 
   const getEntryColor = (type: string) => {
     switch (type) {
-      case 'lecture': return 'bg-blue-100 border-blue-300 text-blue-800'
-      case 'lab': return 'bg-green-100 border-green-300 text-green-800'
-      case 'tutorial': return 'bg-purple-100 border-purple-300 text-purple-800'
-      default: return 'bg-gray-100 border-gray-300 text-gray-800'
+      case 'lecture': return 'bg-blue-100 text-blue-800 border-blue-300'
+      case 'tutorial': return 'bg-green-100 text-green-800 border-green-300'
+      case 'lab': return 'bg-purple-100 text-purple-800 border-purple-300'
+      default: return 'bg-gray-100 text-gray-800 border-gray-300'
     }
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <motion.div
-            className="text-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Sign in to access your timetable
-            </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              Please sign in to view and manage your academic timetable.
-            </p>
-          </motion.div>
-        </main>
-        
-        <Footer />
-      </div>
-    )
-  }
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+  const timeSlots = [
+    '08:00', '09:00', '10:00', '11:00', '12:00',
+    '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'
+  ]
+
+  const filteredEntries = timetableEntries.filter(entry => entry.day === selectedDay)
+    .sort((a, b) => a.time.localeCompare(b.time))
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header />
+      <Header onCreateCourse={() => {}} />
       
       <main className="flex-1 flex">
         <Sidebar />
@@ -133,114 +136,171 @@ function TimetablePageContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="mb-8 flex justify-between items-center">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Academic Timetable</h1>
-                <p className="text-gray-600">View and manage your weekly class schedule</p>
+            {/* Header */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Timetable</h1>
+                  <p className="text-gray-600 mt-2">
+                    Your weekly class schedule
+                    <span className="ml-2 text-sm text-gray-500">
+                      {timetableEntries.length} entries
+                    </span>
+                  </p>
+                </div>
+                <Button onClick={handleAddEntry}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Entry
+                </Button>
               </div>
-              <Button onClick={() => setIsCreateModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Class
-              </Button>
             </div>
 
-            {isLoading ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center mx-auto mb-4 animate-pulse">
-                  <Calendar className="w-8 h-8 text-gray-400" />
-                </div>
-                <p className="text-gray-600">Loading timetable...</p>
+            {/* Day Selector */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 mb-6">
+              <div className="flex space-x-2">
+                {days.map(day => (
+                  <button
+                    key={day}
+                    onClick={() => setSelectedDay(day)}
+                    className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
+                      selectedDay === day
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {day.substring(0, 3)}
+                  </button>
+                ))}
               </div>
-            ) : (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Time
-                        </th>
-                        {days.map(day => (
-                          <th key={day} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {day.slice(0, 3)}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {timeSlots.map(time => (
-                        <tr key={time} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                            {time}
-                          </td>
-                          {days.map(day => {
-                            const entry = getEntryForSlot(day, time)
-                            return (
-                              <td key={`${day}-${time}`} className="px-2 py-2">
-                                {entry ? (
-                                  <div className={`p-2 rounded-lg border ${getEntryColor(entry.type)} text-xs`}>
-                                    <div className="font-semibold truncate">{entry.course_name}</div>
-                                    <div className="text-xs opacity-75">{entry.room}</div>
-                                    <div className="text-xs opacity-75">
-                                      {entry.start_time} - {entry.end_time}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="h-12"></div>
-                                )}
-                              </td>
-                            )
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+            </div>
 
-            {/* Quick Stats */}
+            {/* Timetable Grid */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="grid grid-cols-1 gap-4">
+                {filteredEntries.length === 0 ? (
+                  <motion.div
+                    className="text-center py-12"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Clock className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      No classes on {selectedDay}
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Add your first class for {selectedDay} to get started.
+                    </p>
+                    <Button onClick={handleAddEntry}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add {selectedDay} Class
+                    </Button>
+                  </motion.div>
+                ) : (
+                  filteredEntries.map((entry, index) => {
+                    const Icon = getEntryIcon(entry.type)
+                    return (
+                      <motion.div
+                        key={entry.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className={`p-4 rounded-lg border-2 ${getEntryColor(entry.type)} cursor-pointer hover:shadow-md transition-all`}
+                        onClick={() => handleEditEntry(entry)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <Icon className="w-5 h-5" />
+                              <span className="font-medium capitalize">{entry.type}</span>
+                              <span className="text-sm opacity-75">{entry.duration}</span>
+                            </div>
+                            
+                            <h3 className="font-semibold text-lg mb-1">{entry.course_name || 'Untitled Course'}</h3>
+                            {entry.course_code && (
+                              <p className="text-sm text-gray-600 mb-2">{entry.course_code}</p>
+                            )}
+                            
+                            <div className="flex items-center space-x-4 text-sm text-gray-600">
+                              <div className="flex items-center space-x-1">
+                                <Clock className="w-4 h-4" />
+                                <span>{entry.time}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <MapPin className="w-4 h-4" />
+                                <span>{entry.location}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex space-x-2 ml-4">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleEditEntry(entry)
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteEntry(entry.id)
+                              }}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Stats */}
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-lg p-6 border border-gray-200">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-6 h-6 text-blue-600" />
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-blue-600" />
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {timetableEntries.length}
-                    </h3>
-                    <p className="text-sm text-gray-600">Total Classes</p>
-                  </div>
+                  <h3 className="font-semibold text-gray-900">Total Lectures</h3>
                 </div>
+                <p className="text-2xl font-bold text-blue-600">
+                  {timetableEntries.filter(e => e.type === 'lecture').length}
+                </p>
               </div>
 
-              <div className="bg-white rounded-lg p-6 border border-gray-200">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <Clock className="w-6 h-6 text-green-600" />
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <Users className="w-5 h-5 text-green-600" />
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {timetableEntries.length * 1.5}h
-                    </h3>
-                    <p className="text-sm text-gray-600">Weekly Hours</p>
-                  </div>
+                  <h3 className="font-semibold text-gray-900">Tutorials</h3>
                 </div>
+                <p className="text-2xl font-bold text-green-600">
+                  {timetableEntries.filter(e => e.type === 'tutorial').length}
+                </p>
               </div>
 
-              <div className="bg-white rounded-lg p-6 border border-gray-200">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-6 h-6 text-purple-600" />
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <Beaker className="w-5 h-5 text-purple-600" />
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {new Set(timetableEntries.map(e => e.day_of_week)).size}
-                    </h3>
-                    <p className="text-sm text-gray-600">Days Active</p>
-                  </div>
+                  <h3 className="font-semibold text-gray-900">Lab Sessions</h3>
                 </div>
+                <p className="text-2xl font-bold text-purple-600">
+                  {timetableEntries.filter(e => e.type === 'lab').length}
+                </p>
               </div>
             </div>
           </motion.div>
@@ -248,14 +308,24 @@ function TimetablePageContent() {
       </main>
 
       <Footer />
+
+      {/* Timetable Editor Modal */}
+      {isEditorOpen && (
+        <TimetableEditor
+          isOpen={isEditorOpen}
+          entry={selectedEntry || undefined}
+          courses={courses}
+          onSave={handleSaveEntry}
+          onCancel={() => {
+            setIsEditorOpen(false)
+            setSelectedEntry(null)
+          }}
+        />
+      )}
     </div>
   )
 }
 
 export default function TimetablePage() {
-  return (
-    <AuthProvider>
-      <TimetablePageContent />
-    </AuthProvider>
-  )
+  return <TimetablePageContent />
 }

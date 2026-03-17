@@ -6,94 +6,68 @@ import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Footer } from '@/components/layout/Footer'
 import { CourseCard } from '@/components/courses/CourseCard'
+import { ArchivedCourses } from '@/components/courses/ArchivedCourses'
 import { CreateCourseModal } from '@/components/courses/CreateCourseModal'
-import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/Button'
+import { useAuth } from '@/contexts/AuthContext'
+import { useData } from '@/contexts/DataContext'
+import { BookOpen, Archive, Plus, MoreHorizontal } from 'lucide-react'
 import { Course } from '@/types'
 
 function CoursesPageContent() {
-  const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false)
-  const [courses, setCourses] = useState<Course[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const { user } = useAuth()
+  const { courses, notes, refreshData } = useData()
+  const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active')
+  const [isArchiving, setIsArchiving] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (user) {
-      loadCourses()
-    } else {
-      setCourses([])
-      setIsLoading(false)
-    }
-  }, [user])
+  const activeCourses = courses.filter(course => !course.is_archived)
+  const archivedCourses = courses.filter(course => course.is_archived)
 
-  const loadCourses = async () => {
+  const handleCreateCourse = () => {
+    setIsCreateCourseModalOpen(true)
+  }
+
+  const handleArchiveCourse = async (courseId: string) => {
+    setIsArchiving(courseId)
     try {
-      setIsLoading(true)
-      const { getCourses } = await import('@/lib/courses')
-      const userCourses = await getCourses(user!.id)
-      
-      // Get stats for each course
-      const { getCourseStats } = await import('@/lib/courses')
-      const coursesWithStats = await Promise.all(
-        userCourses.map(async (course) => {
-          const stats = await getCourseStats(course.id)
-          return { ...course, ...stats }
-        })
-      )
-      
-      setCourses(coursesWithStats)
+      const { updateCourse } = await import('@/lib/courses')
+      await updateCourse(courseId, { 
+        is_archived: true, 
+        archived_at: new Date().toISOString() 
+      })
+      refreshData()
     } catch (error) {
-      console.error('Error loading courses:', error)
+      console.error('Error archiving course:', error)
     } finally {
-      setIsLoading(false)
+      setIsArchiving(null)
     }
   }
 
-  const handleCreateCourse = async (courseData: { name: string; code?: string; description?: string }) => {
-    if (!user) return
-    
+  const handleUnarchiveCourse = async (courseId: string) => {
     try {
-      const { createCourse } = await import('@/lib/courses')
-      const newCourse = await createCourse(courseData, user.id)
-      setCourses([newCourse, ...courses])
+      const { updateCourse } = await import('@/lib/courses')
+      await updateCourse(courseId, { 
+        is_archived: false, 
+        archived_at: undefined 
+      })
+      refreshData()
     } catch (error) {
-      console.error('Error creating course:', error)
+      console.error('Error unarchiving course:', error)
     }
   }
 
-  const handleCourseClick = (course: Course) => {
-    // Navigate to course details page
-    window.location.href = `/courses/${course.id}`
+  const getNotesCount = (courseId: string) => {
+    return notes.filter(note => note.course_id === courseId).length
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header onCreateCourse={() => {}} />
-        
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <motion.div
-            className="text-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Sign in to access your courses
-            </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              Please sign in to view and manage your courses.
-            </p>
-          </motion.div>
-        </main>
-        
-        <Footer />
-      </div>
-    )
+  const getSharedCount = (courseId: string) => {
+    return notes.filter(note => note.course_id === courseId && note.is_shared).length
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header onCreateCourse={() => {}} />
+      <Header onCreateCourse={handleCreateCourse} />
       
       <main className="flex-1 flex">
         <Sidebar />
@@ -104,60 +78,115 @@ function CoursesPageContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
+            {/* Header */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">All Courses</h1>
-              <p className="text-gray-600">Manage and organize all your academic courses</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">My Courses</h1>
+                  <p className="text-gray-600 mt-2">
+                    Manage your active and completed courses
+                  </p>
+                </div>
+                <Button onClick={handleCreateCourse}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Course
+                </Button>
+              </div>
             </div>
 
-            {isLoading ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center mx-auto mb-4 animate-pulse">
-                  <div className="w-8 h-8 bg-gray-300 rounded-lg"></div>
-                </div>
-                <p className="text-gray-600">Loading courses...</p>
+            {/* Tab Navigation */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 mb-6">
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setActiveTab('active')}
+                  className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 ${
+                    activeTab === 'active'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>Active Courses ({activeCourses.length})</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('archived')}
+                  className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 ${
+                    activeTab === 'archived'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <Archive className="w-4 h-4" />
+                  <span>Archived ({archivedCourses.length})</span>
+                </button>
               </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {courses.map((course, index) => (
-                    <motion.div
-                      key={course.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <CourseCard
-                        course={course}
-                        notesCount={(course as any).notesCount || 0}
-                        sharedCount={(course as any).sharedCount || 0}
-                        onClick={() => handleCourseClick(course)}
-                      />
-                    </motion.div>
-                  ))}
-                </div>
+            </div>
 
-                {courses.length === 0 && (
+            {/* Tab Content */}
+            {activeTab === 'active' ? (
+              <div className="space-y-6">
+                {activeCourses.length === 0 ? (
                   <motion.div
-                    className="text-center py-12"
+                    className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                   >
-                    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <BookOpen className="w-8 h-8 text-gray-400" />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No courses yet</h3>
-                    <p className="text-gray-600 mb-4">Create your first course to get started with HydraSpace</p>
-                    <button
-                      onClick={() => setIsCreateCourseModalOpen(true)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Create Course
-                    </button>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      No Active Courses
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Get started by creating your first course.
+                    </p>
+                    <Button onClick={handleCreateCourse}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Your First Course
+                    </Button>
                   </motion.div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {activeCourses.map((course, index) => (
+                      <motion.div
+                        key={course.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="relative"
+                      >
+                        <CourseCard
+                          course={course}
+                          notesCount={getNotesCount(course.id)}
+                          sharedCount={getSharedCount(course.id)}
+                          onClick={(course) => {
+                            window.location.href = `/courses/${course.id}`
+                          }}
+                        />
+                        
+                        {/* Archive Button */}
+                        <div className="absolute top-4 right-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleArchiveCourse(course.id)}
+                            disabled={isArchiving === course.id}
+                            className="bg-white/90 hover:bg-white shadow-sm"
+                          >
+                            <Archive className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
                 )}
-              </>
+              </div>
+            ) : (
+              <ArchivedCourses
+                courses={archivedCourses}
+                notes={notes}
+                onUnarchiveCourse={handleUnarchiveCourse}
+              />
             )}
           </motion.div>
         </main>
@@ -165,19 +194,25 @@ function CoursesPageContent() {
 
       <Footer />
 
+      {/* Create Course Modal */}
       <CreateCourseModal
         isOpen={isCreateCourseModalOpen}
         onClose={() => setIsCreateCourseModalOpen(false)}
-        onCreateCourse={handleCreateCourse}
+        onCreateCourse={async (courseData) => {
+          try {
+            const { createCourse } = await import('@/lib/courses')
+            await createCourse(courseData, user!.id)
+            setIsCreateCourseModalOpen(false)
+            refreshData()
+          } catch (error) {
+            console.error('Error creating course:', error)
+          }
+        }}
       />
     </div>
   )
 }
 
 export default function CoursesPage() {
-  return (
-    <AuthProvider>
-      <CoursesPageContent />
-    </AuthProvider>
-  )
+  return <CoursesPageContent />
 }
