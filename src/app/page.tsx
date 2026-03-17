@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
 import { useRouter } from 'next/navigation'
+import { LoadingScreen } from '@/components/ui/LoadingScreen'
 
 interface Course {
   id: string
@@ -40,7 +41,7 @@ interface Note {
 
 function HomeContent() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, isLoading: isAuthLoading } = useAuth()
   const { courses, notes, isLoading, refreshData, isOffline, lastSyncTime } = useData()
   const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false)
   const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false)
@@ -64,6 +65,10 @@ function HomeContent() {
 
   const getSharedCount = (courseId: string) => {
     return notes.filter(note => note.course_id === courseId && note.is_shared).length
+  }
+
+  if (isAuthLoading) {
+    return <LoadingScreen />
   }
 
   if (!user) {

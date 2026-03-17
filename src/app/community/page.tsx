@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 
 import { CommunityNotePreview } from '@/components/community/CommunityNotePreview'
+import { LoadingScreen } from '@/components/ui/LoadingScreen'
 
 function CommunityPageContent() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -22,7 +23,7 @@ function CommunityPageContent() {
   const [selectedNote, setSelectedNote] = useState<any | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   
-  const { user } = useAuth()
+  const { user, isLoading: isAuthLoading } = useAuth()
   const { sharedNotes, isLoading } = useData()
 
   const handleSearch = async () => {
@@ -76,6 +77,14 @@ function CommunityPageContent() {
   const handleNoteClick = (note: any) => {
     setSelectedNote(note)
     setIsPreviewOpen(true)
+  }
+
+  if (isAuthLoading) {
+    return <LoadingScreen />
+  }
+
+  if (!user) {
+    return null
   }
 
   return (

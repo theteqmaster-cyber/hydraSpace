@@ -13,6 +13,7 @@ import { Note, Course } from '@/types'
 import { BookOpen, FileText, AlertCircle, CheckCircle, Plus, Search, Eye, EyeOff, Edit, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { LoadingScreen } from '@/components/ui/LoadingScreen'
 
 function NotesPageContent() {
   const { notes, courses, isLoading, refreshData, deleteNote: deleteNoteLocally, updateNote: updateNoteLocally } = useData()
@@ -21,7 +22,7 @@ function NotesPageContent() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCourse, setFilterCourse] = useState('')
-  const { user } = useAuth()
+  const { user, isLoading: isAuthLoading } = useAuth()
 
   const handleCreateNote = () => {
     setSelectedNote(null)
@@ -120,6 +121,10 @@ function NotesPageContent() {
     
     return matchesSearch && matchesCourse
   })
+
+  if (isAuthLoading) {
+    return <LoadingScreen />
+  }
 
   if (!user) {
     return (

@@ -173,7 +173,7 @@ function CourseDetailPageContent() {
       <main className="flex-1 flex">
         <Sidebar />
         
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 md:p-8 mobile-safe-padding">
 
           {/* Course Header */}
           <div className="mb-8">
@@ -181,29 +181,29 @@ function CourseDetailPageContent() {
               <Button
                 variant="ghost"
                 onClick={() => router.back()}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 -ml-2"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Back to Courses</span>
+                <span>Back</span>
               </Button>
             </div>
               
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left space-y-4 sm:space-y-0 sm:space-x-4 w-full">
                   <div 
-                    className="w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold text-xl"
+                    className="w-20 h-20 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg border-4 border-white/20"
                     style={{ backgroundColor: course.color || '#3B82F6' }}
                   >
                     {course.code?.substring(0, 2).toUpperCase() || 'CO'}
                   </div>
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{course.name}</h1>
+                  <div className="flex-1">
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 leading-tight">{course.name}</h1>
                     {course.code && (
-                      <p className="text-gray-600">{course.code}</p>
+                      <p className="text-slate-500 font-bold uppercase tracking-wider text-sm mt-1">{course.code}</p>
                     )}
                     {course.description && (
-                      <p className="text-gray-600 mt-2">{course.description}</p>
+                      <p className="text-slate-600 mt-2 text-sm line-clamp-2 md:line-clamp-none">{course.description}</p>
                     )}
                   </div>
                 </div>
@@ -212,8 +212,8 @@ function CourseDetailPageContent() {
           </div>
 
           {/* Tab Navigation */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
-            <div className="flex border-b border-gray-200">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+            <div className="flex overflow-x-auto custom-scrollbar border-b border-gray-200 hide-scrollbar scroll-smooth">
               {(['notes', 'examtips', 'assignments'] as TabType[]).map((tab) => {
                 const Icon = getTabIcon(tab)
                 const count = getNotesForTab().length
@@ -222,15 +222,17 @@ function CourseDetailPageContent() {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 font-medium transition-colors ${
+                    className={`flex-none sm:flex-1 flex items-center justify-center space-x-2 px-6 py-4 font-bold transition-all whitespace-nowrap ${
                       activeTab === tab
-                        ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
+                        : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
-                    <span>{getTabLabel(tab)}</span>
-                    <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-sm">{getTabLabel(tab)}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                      activeTab === tab ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'
+                    }`}>
                       {count}
                     </span>
                   </button>
@@ -240,34 +242,34 @@ function CourseDetailPageContent() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {getTabLabel(activeTab)} ({getNotesForTab().length})
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">
+              {getTabLabel(activeTab)} <span className="text-slate-400 font-medium ml-1">({getNotesForTab().length})</span>
             </h2>
             
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-2">
               {activeTab === 'notes' && (
-                <Button onClick={() => handleCreateNote('lecture')}>
+                <Button onClick={() => handleCreateNote('lecture')} className="flex-1 sm:flex-none">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Lecture Note
+                  New Note
                 </Button>
               )}
               {activeTab === 'examtips' && (
                 <>
-                  <Button variant="secondary" onClick={() => handleCreateNote('concept')}>
+                  <Button variant="secondary" onClick={() => handleCreateNote('concept')} className="flex-1 sm:flex-none">
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Concept
+                    Concept
                   </Button>
-                  <Button onClick={() => handleCreateNote('test')}>
+                  <Button onClick={() => handleCreateNote('test')} className="flex-1 sm:flex-none">
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Exam Tip
+                    Exam Tip
                   </Button>
                 </>
               )}
               {activeTab === 'assignments' && (
-                <Button onClick={() => handleCreateNote('assignment')}>
+                <Button onClick={() => handleCreateNote('assignment')} className="flex-1 sm:flex-none">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Assignment
+                  New Assignment
                 </Button>
               )}
             </div>

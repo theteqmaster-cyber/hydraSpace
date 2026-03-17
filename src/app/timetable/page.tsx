@@ -18,6 +18,7 @@ import {
   Users
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { LoadingScreen } from '@/components/ui/LoadingScreen'
 
 interface TimetableEntry {
   id: string
@@ -33,7 +34,7 @@ interface TimetableEntry {
 }
 
 function TimetablePageContent() {
-  const { user } = useAuth()
+  const { user, isLoading: isAuthLoading } = useAuth()
   const { 
     courses, 
     timetableEntries, 
@@ -156,6 +157,14 @@ function TimetablePageContent() {
   const filteredEntries = timetableEntries
     .filter(entry => dayMapRev[entry.day_of_week] === selectedDay)
     .sort((a, b) => a.start_time.localeCompare(b.start_time))
+
+  if (isAuthLoading) {
+    return <LoadingScreen />
+  }
+
+  if (!user) {
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

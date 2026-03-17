@@ -12,9 +12,10 @@ import { createEvent, CalendarEvent } from '@/lib/events'
 import { Calendar, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { EventEditor } from '@/components/calendar/EventEditor'
+import { LoadingScreen } from '@/components/ui/LoadingScreen'
 
 function CalendarPageContent() {
-  const { user } = useAuth()
+  const { user, isLoading: isAuthLoading } = useAuth()
   const { events, addEvent, refreshData, isOffline, lastSyncTime } = useData()
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
   const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -103,6 +104,14 @@ function CalendarPageContent() {
   ]
 
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+  if (isAuthLoading) {
+    return <LoadingScreen />
+  }
+
+  if (!user) {
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

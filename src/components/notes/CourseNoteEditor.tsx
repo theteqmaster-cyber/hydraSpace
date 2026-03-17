@@ -112,28 +112,28 @@ export const CourseNoteEditor = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white rounded-xl max-w-4xl w-full max-h-[95vh] overflow-hidden flex flex-col"
+        initial={{ opacity: 0, y: "100%" }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: "100%" }}
+        className="bg-white rounded-t-3xl md:rounded-xl max-w-4xl w-full h-[95vh] md:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+        <div className="bg-slate-900 text-white p-5 md:p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl md:text-2xl font-black truncate">
                 {note ? 'Edit Note' : 'Create New Note'}
               </h2>
-              <p className="text-blue-100">
-                {course.name} ({course.code})
+              <p className="text-slate-400 font-bold uppercase text-xs tracking-widest mt-0.5 truncate">
+                {course.name}
               </p>
             </div>
             <Button
               variant="ghost"
               onClick={onCancel}
-              className="text-white hover:bg-white/20"
+              className="text-white hover:bg-white/10 -mr-2"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </Button>
           </div>
         </div>
@@ -200,14 +200,14 @@ export const CourseNoteEditor = ({
 
             {/* Content */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-black text-slate-700 uppercase tracking-wider mb-2">
                 Content *
               </label>
               <textarea
                 value={formData.content}
                 onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                 placeholder="Start writing your note..."
-                className="w-full min-h-[300px] p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full min-h-[350px] md:min-h-[400px] p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none text-slate-800 leading-relaxed custom-scrollbar"
                 required
               />
             </div>
@@ -228,21 +228,22 @@ export const CourseNoteEditor = ({
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 p-5 md:p-6 border-t border-slate-100 bg-slate-50">
             <Button
               type="button"
               variant="secondary"
               onClick={onCancel}
               disabled={isSaving}
+              className="w-full sm:w-auto h-12 rounded-xl font-bold"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isSaving}
-              className={getSaveButtonColor()}
+              className={`w-full sm:w-auto h-12 rounded-xl font-bold shadow-lg transition-all ${getSaveButtonColor() || 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'}`}
             >
-              <Save className="w-4 h-4 mr-2" />
+              <Save className="w-5 h-5 mr-2" />
               {getSaveButtonText()}
             </Button>
           </div>

@@ -143,24 +143,24 @@ export const NoteEditor = ({
 
   return (
     <motion.div
-      className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
+      className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
+      <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
               {(() => {
                 const currentType = noteTypes.find(type => type.value === formData.type)
-                return currentType ? <currentType.icon className="w-5 h-5 text-gray-600" /> : null
+                return currentType ? <currentType.icon className="w-4 h-4 text-blue-600" /> : null
               })()}
               <select
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                className="text-sm font-medium text-gray-700 bg-transparent border-none focus:outline-none cursor-pointer"
+                className="text-xs font-black uppercase tracking-tight text-slate-700 bg-transparent border-none focus:outline-none cursor-pointer"
               >
                 {noteTypes.map(type => (
                   <option key={type.value} value={type.value}>
@@ -169,54 +169,60 @@ export const NoteEditor = ({
                 ))}
               </select>
             </div>
-            
-            {formData.type === 'lecture' && (
-              <Input
-                label=""
-                type="number"
-                placeholder="Lecture #"
-                value={formData.lecture_number || ''}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  lecture_number: e.target.value ? parseInt(e.target.value) : undefined 
-                })}
-                className="w-20"
-              />
-            )}
-          </div>
 
-          <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setFormData({ ...formData, is_shared: !formData.is_shared })}
-              className={`flex items-center space-x-2 ${
-                formData.is_shared ? 'text-green-600' : 'text-gray-600'
+              className={`flex items-center space-x-2 h-9 rounded-xl border transition-all ${
+                formData.is_shared 
+                  ? 'text-green-600 bg-green-50 border-green-100' 
+                  : 'text-slate-400 bg-slate-50 border-slate-100'
               }`}
             >
               {formData.is_shared ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-              <span className="text-sm">{formData.is_shared ? 'Shared' : 'Private'}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest">{formData.is_shared ? 'Shared' : 'Private'}</span>
             </Button>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              {formData.type === 'lecture' && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">LEC #</span>
+                  <input
+                    type="number"
+                    placeholder="—"
+                    value={formData.lecture_number || ''}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      lecture_number: e.target.value ? parseInt(e.target.value) : undefined 
+                    })}
+                    className="w-12 h-8 bg-white border border-slate-200 rounded-lg text-center text-sm font-bold focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                  />
+                </div>
+              )}
+            </div>
             
             {/* Auto-save indicator */}
-            <div className="flex items-center space-x-2 text-sm">
+            <div className="flex items-center space-x-2 min-h-[20px]">
               {saveStatus === 'saving' && (
-                <span className="text-blue-600">Auto-saving...</span>
+                <span className="text-[10px] font-bold text-blue-600 animate-pulse uppercase tracking-tight">Syncing...</span>
               )}
               {saveStatus === 'saved' && (
-                <span className="text-green-600 flex items-center space-x-1">
-                  <CheckCircle className="w-4 h-4" />
-                  <span>Auto-saved</span>
+                <span className="text-[10px] font-bold text-green-600 flex items-center space-x-1 uppercase tracking-tight">
+                  <CheckCircle className="w-3 h-3" />
+                  <span>Synced</span>
                 </span>
               )}
               {saveStatus === 'error' && (
-                <span className="text-red-600 flex items-center space-x-1">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>Save failed</span>
+                <span className="text-[10px] font-bold text-red-600 flex items-center space-x-1 uppercase tracking-tight">
+                  <AlertCircle className="w-3 h-3" />
+                  <span>Offline</span>
                 </span>
               )}
               {hasUnsavedChanges && saveStatus === 'idle' && (
-                <span className="text-gray-500">Unsaved changes...</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Draft</span>
               )}
             </div>
           </div>
@@ -224,21 +230,22 @@ export const NoteEditor = ({
       </div>
 
       {/* Content */}
-      <div className="p-6 space-y-4">
+      <div className="p-5 space-y-4">
+        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Title</label>
         <Input
-          label="Note Title"
+          label=""
           placeholder="Enter note title..."
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          className="text-lg font-bold border-none px-0 focus:ring-0"
         />
         
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Content
+          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+            Your Notes
           </label>
           <textarea
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            rows={12}
+            className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all resize-none text-slate-800 leading-relaxed min-h-[400px]"
             placeholder="Start writing your note..."
             value={formData.content}
             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
@@ -247,27 +254,29 @@ export const NoteEditor = ({
       </div>
 
       {/* Footer actions */}
-      <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-        <div className="flex justify-between">
-          <Button variant="ghost" onClick={handleCancel}>
+      <div className="px-5 py-5 border-t border-slate-100 bg-slate-50/50">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button variant="ghost" onClick={handleCancel} className="w-full sm:w-auto h-12 rounded-xl text-slate-500 font-bold">
             Close
           </Button>
-          <div className="flex space-x-2">
+          <div className="flex flex-1 gap-3">
             <Button
               variant="secondary"
               onClick={handleSave}
               disabled={!formData.title.trim() || !formData.content.trim() || isSaving}
+              className="flex-1 h-12 rounded-xl font-bold"
             >
               <Save className="w-4 h-4 mr-2" />
-              Save Draft
+              Draft
             </Button>
             <Button
               variant="primary"
               onClick={handleSave}
               disabled={!formData.title.trim() || !formData.content.trim() || isSaving}
+              className="flex-[1.5] h-12 rounded-xl font-bold shadow-lg shadow-blue-500/20"
             >
               <Share2 className="w-4 h-4 mr-2" />
-              {note ? 'Update' : 'Create'} Note
+              {note ? 'Update' : 'Post'}
             </Button>
           </div>
         </div>

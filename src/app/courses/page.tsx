@@ -15,10 +15,11 @@ import { useData } from '@/contexts/DataContext'
 import { useRouter } from 'next/navigation'
 import { BookOpen, Archive, Plus, MoreHorizontal } from 'lucide-react'
 import { Course } from '@/types'
+import { LoadingScreen } from '@/components/ui/LoadingScreen'
 
 function CoursesPageContent() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, isLoading: isAuthLoading } = useAuth()
   const { courses, notes, refreshData } = useData()
   const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active')
@@ -66,6 +67,14 @@ function CoursesPageContent() {
 
   const getSharedCount = (courseId: string) => {
     return notes.filter(note => note.course_id === courseId && note.is_shared).length
+  }
+
+  if (isAuthLoading) {
+    return <LoadingScreen />
+  }
+
+  if (!user) {
+    return null // Layout will handle redirect if needed, or we show nothing
   }
 
   return (
