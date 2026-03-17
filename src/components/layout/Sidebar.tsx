@@ -9,7 +9,8 @@ import {
   Calendar, 
   Clock,
   FileText,
-  HelpCircle
+  HelpCircle,
+  LogOut
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -67,7 +68,7 @@ export const Sidebar = () => {
       </nav>
 
       {/* Quick Stats */}
-      <div className="border-t border-gray-200 pt-6">
+      <div className="border-t border-gray-200 pt-6 mb-auto">
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
           Quick Stats
         </h3>
@@ -85,6 +86,21 @@ export const Sidebar = () => {
             </motion.div>
           ))}
         </div>
+      </div>
+
+      {/* Logout Button */}
+      <div className="border-t border-gray-200 pt-6 mt-6">
+        <button
+          onClick={async () => {
+            const { signOut } = await import('@/lib/auth')
+            await signOut()
+            window.location.reload()
+          }}
+          className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors w-full"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>Sign Out</span>
+        </button>
       </div>
     </motion.aside>
   )

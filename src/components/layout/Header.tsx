@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Plus, Calendar, Users, BookOpen, Menu, X, Archive, Search, Clock, FileText, Settings, HelpCircle } from 'lucide-react'
+import { Plus, Calendar, Users, BookOpen, Menu, X, Archive, Search, Clock, FileText, Settings, HelpCircle, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { AuthModal } from '@/components/auth/AuthModal'
@@ -93,10 +93,13 @@ export const Header = ({ onCreateCourse }: HeaderProps) => {
               {user ? "Calendar" : "Sign In to View Calendar"}
             </Button>
             {user ? (
-              <Button onClick={onCreateCourse} size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                New Course
-              </Button>
+              <div className="flex items-center space-x-4">
+                <Button onClick={onCreateCourse} size="sm" className="hidden lg:flex">
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Course
+                </Button>
+                <UserMenu user={user} />
+              </div>
             ) : (
               <Button onClick={() => setIsAuthModalOpen(true)} variant="primary" size="sm" className="shadow-lg shadow-blue-500/20">
                 Sign In
@@ -152,10 +155,26 @@ export const Header = ({ onCreateCourse }: HeaderProps) => {
               {user ? "Calendar" : "Sign In to View Calendar"}
             </Button>
             {user && (
-              <Button onClick={onCreateCourse} className="w-full justify-start">
-                <Plus className="w-4 h-4 mr-2" />
-                New Course
-              </Button>
+              <>
+                <Button onClick={onCreateCourse} className="w-full justify-start">
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Course
+                </Button>
+                <div className="border-t border-gray-100 mt-4 pt-4">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={async () => {
+                      const { signOut } = await import('@/lib/auth')
+                      await signOut()
+                      window.location.reload()
+                    }}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              </>
             )}
           </div>
         </motion.div>
