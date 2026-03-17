@@ -11,6 +11,7 @@ import { NoteEditor } from '@/components/notes/NoteEditor'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
+import { useRouter } from 'next/navigation'
 
 interface Course {
   id: string
@@ -37,6 +38,7 @@ interface Note {
 }
 
 function HomeContent() {
+  const router = useRouter()
   const { user } = useAuth()
   const { courses, notes, isLoading, refreshData, isOffline, lastSyncTime } = useData()
   const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false)
@@ -50,7 +52,7 @@ function HomeContent() {
 
   const handleCourseClick = (course: any) => {
     // Navigate to course detail page instead of opening note editor
-    window.location.href = `/courses/${course.id}`
+    router.push(`/courses/${course.id}`)
   }
 
   const activeCourses = courses.filter(course => !course.is_archived)
@@ -65,46 +67,150 @@ function HomeContent() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      <div className="min-h-screen bg-slate-50 flex flex-col">
         <Header onCreateCourse={() => {}} />
         
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <motion.div
-            className="text-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-8">
-              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">HS</span>
+        {/* Modern Hero Section */}
+        <section className="relative pt-20 pb-24 lg:pt-32 lg:pb-32 overflow-hidden bg-white">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl">
+            <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-50 rounded-full blur-3xl opacity-50 animate-pulse"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-50 rounded-full blur-3xl opacity-50"></div>
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="text-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-sm font-bold tracking-wide uppercase mb-8"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                </span>
+                <span>By Students, For Students</span>
+              </motion.div>
+
+              <motion.h1 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-6xl lg:text-8xl font-black text-slate-900 leading-tight tracking-tighter mb-8"
+              >
+                The Digital Notebook <br />
+                That Helps You <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Win</span>.
+              </motion.h1>
+
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="text-xl text-slate-600 mb-12 max-w-2xl mx-auto leading-relaxed"
+              >
+                Stop drowning in loose papers and fragmented files. HydraSpace is the all-in-one OS for your academic life. Notes, classes, and collaboration — solved.
+              </motion.p>
+
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+              >
+                <Button 
+                  size="lg" 
+                  onClick={() => window.location.href = '/courses'}
+                  className="h-16 px-10 rounded-2xl text-lg font-bold shadow-2xl shadow-blue-600/30 group"
+                >
+                  Start Your Journey
+                  <span className="ml-2 group-hover:translate-x-1 transition-transform">🚀</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="lg"
+                  onClick={() => {
+                    const el = document.getElementById('why-hydra');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="h-16 px-10 rounded-2xl text-gray-500 hover:text-blue-600"
+                >
+                  See Why It Works
+                </Button>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* Value Proposition */}
+        <section id="why-hydra" className="py-24 bg-slate-50 border-y border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl transition-all group">
+                <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:rotate-6 transition-transform">
+                  <span className="text-2xl">📝</span>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-4 text-left">Structured Notes</h3>
+                <p className="text-slate-600 leading-relaxed text-left">Linked directly to your courses. No more searching for "that one lecture" — it's exactly where it belongs.</p>
+              </div>
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl transition-all group">
+                <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:-rotate-6 transition-transform">
+                  <span className="text-2xl">⚡</span>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-4 text-left">Academic Flow</h3>
+                <p className="text-slate-600 leading-relaxed text-left">Integrated timetable and calendar. We know when your exams are because you do. Stay ahead, always.</p>
+              </div>
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl transition-all group">
+                <div className="w-14 h-14 bg-purple-600 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:rotate-12 transition-transform">
+                  <span className="text-2xl">🤝</span>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-4 text-left">The Library</h3>
+                <p className="text-slate-600 leading-relaxed text-left">Share your knowledge or learn from the best. Access a community-driven database of verified notes.</p>
               </div>
             </div>
-            <h1 className="text-5xl font-bold text-gray-900 mb-4">
-              Welcome to <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">HydraSpace</span>
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Your digital academic workspace for university students. Organize notes, manage courses, and collaborate with peers - all in one powerful platform.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                onClick={() => window.location.href = '/help'}
-                className="group"
-              >
-                Learn More
-                <span className="ml-2">🎓</span>
-              </Button>
-              <Button 
-                variant="secondary" 
-                size="lg"
-                onClick={() => window.location.href = '/courses'}
-              >
-                Sign In to Get Started
-              </Button>
+          </div>
+        </section>
+
+        {/* Social Proof Placeholder / Pitch */}
+        <section className="py-24 bg-white overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col lg:flex-row items-center gap-16">
+              <div className="flex-1 text-left">
+                <h2 className="text-4xl font-black text-slate-900 mb-6 leading-tight">
+                  Stop stressing. <br />
+                  Start <span className="text-blue-600">mastering</span> your degree.
+                </h2>
+                <div className="space-y-6">
+                  {[
+                    "Zero setup required. Just sign up and start learning.",
+                    "Mobile friendly. Study in the commute or in the library.",
+                    "99.9% Uptime. Your notes are always available when you need them.",
+                    "Built by NUST students who understand the struggle."
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start space-x-3">
+                      <div className="mt-1 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-green-600 text-[10px] font-bold">✓</span>
+                      </div>
+                      <p className="text-slate-700 font-medium">{item}</p>
+                    </div>
+                  ))}
+                </div>
+                <Button 
+                  size="lg" 
+                  onClick={() => window.location.href = '/courses'}
+                  className="mt-10 h-14 rounded-xl px-8"
+                >
+                  Join the Community
+                </Button>
+              </div>
+              <div className="flex-1 relative">
+                 <div className="w-full h-[400px] bg-gradient-to-br from-slate-100 to-slate-200 rounded-3xl border-4 border-white shadow-2xl relative overflow-hidden flex items-center justify-center">
+                    <div className="text-6xl">🎓</div>
+                    <div className="absolute inset-0 bg-blue-600/5 backdrop-blur-[1px]"></div>
+                 </div>
+              </div>
             </div>
-          </motion.div>
-        </main>
+          </div>
+        </section>
         
         <Footer />
       </div>
@@ -128,12 +234,14 @@ function HomeContent() {
             <div className="mb-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                  <p className="text-gray-600 mt-2">
-                    Welcome back! Here's your academic overview
+                  <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+                    Welcome back, <span className="text-blue-600">{user.name?.split(' ')[0] || 'Student'}</span>!
+                  </h1>
+                  <p className="text-gray-500 mt-3 text-lg">
+                    Here's a snapshot of your academic journey today.
                     {isOffline && (
-                      <span className="ml-2 text-orange-600 font-medium">
-                        (Offline Mode)
+                      <span className="ml-2 text-orange-600 font-bold bg-orange-50 px-2 py-1 rounded-lg text-sm uppercase">
+                        Offline
                       </span>
                     )}
                     {lastSyncTime && (
@@ -280,7 +388,6 @@ function HomeContent() {
         }}
       />
 
-      <Footer />
     </div>
   )
 }

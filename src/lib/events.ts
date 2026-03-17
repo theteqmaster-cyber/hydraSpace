@@ -4,14 +4,12 @@ export interface CalendarEvent {
   id: string
   title: string
   description?: string
-  date: string
-  time: string
-  type: 'assignment' | 'exam' | 'lecture' | 'meeting' | 'other'
+  start_time: string
+  end_time: string
+  type: 'assignment' | 'test' | 'lecture' | 'other'
   course_id?: string
-  location?: string
   user_id: string
   created_at: string
-  updated_at: string
 }
 
 export const getEvents = async (userId: string): Promise<CalendarEvent[]> => {
@@ -19,7 +17,7 @@ export const getEvents = async (userId: string): Promise<CalendarEvent[]> => {
     .from('calendar_events')
     .select('*')
     .eq('user_id', userId)
-    .order('date', { ascending: true })
+    .order('start_time', { ascending: true })
 
   if (error) throw error
   return data || []

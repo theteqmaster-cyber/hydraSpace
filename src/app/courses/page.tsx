@@ -11,10 +11,12 @@ import { CreateCourseModal } from '@/components/courses/CreateCourseModal'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
+import { useRouter } from 'next/navigation'
 import { BookOpen, Archive, Plus, MoreHorizontal } from 'lucide-react'
 import { Course } from '@/types'
 
 function CoursesPageContent() {
+  const router = useRouter()
   const { user } = useAuth()
   const { courses, notes, refreshData } = useData()
   const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false)
@@ -160,7 +162,7 @@ function CoursesPageContent() {
                           notesCount={getNotesCount(course.id)}
                           sharedCount={getSharedCount(course.id)}
                           onClick={(course) => {
-                            window.location.href = `/courses/${course.id}`
+                            router.push(`/courses/${course.id}`)
                           }}
                         />
                         

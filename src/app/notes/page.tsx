@@ -7,61 +7,20 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { Footer } from '@/components/layout/Footer'
 import { NoteEditor } from '@/components/notes/NoteEditor'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import { useData } from '@/contexts/DataContext'
 import { Note, Course } from '@/types'
 import { BookOpen, FileText, AlertCircle, CheckCircle, Plus, Search, Eye, EyeOff, Edit, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 
 function NotesPageContent() {
-  const [notes, setNotes] = useState<Note[]>([])
-  const [courses, setCourses] = useState<Course[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { notes, courses, isLoading, refreshData, deleteNote: deleteNoteLocally, updateNote: updateNoteLocally } = useData()
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [selectedNote, setSelectedNote] = useState<Note | null>(null)
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCourse, setFilterCourse] = useState('')
   const { user } = useAuth()
-
-  useEffect(() => {
-    if (user) {
-      loadData()
-    } else {
-      setNotes([])
-      setCourses([])
-      setIsLoading(false)
-    }
-  }, [user])
-
-  const loadData = async () => {
-    try {
-      setIsLoading(true)
-      
-      // Load courses
-      const { getCourses } = await import('@/lib/courses')
-      const userCourses = await getCourses(user!.id)
-      setCourses(userCourses)
-      
-      // Load notes for each course
-      const { getNotes } = await import('@/lib/notes')
-      const allNotes: Note[] = []
-      
-      for (const course of userCourses) {
-        const courseNotes = await getNotes(course.id)
-        allNotes.push(...courseNotes.map(note => ({
-          ...note,
-          course_name: course.name,
-          course_code: course.code
-        })))
-      }
-      
-      setNotes(allNotes.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()))
-    } catch (error) {
-      console.error('Error loading data:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const handleCreateNote = () => {
     setSelectedNote(null)
@@ -80,7 +39,8 @@ function NotesPageContent() {
       if (noteData.id) {
         // Update existing note
         const { updateNote } = await import('@/lib/notes')
-        await updateNote(noteData.id, noteData)
+        const updated = await updateNote(noteData.id, noteData)
+        updateNoteLocally(noteData.id, updated)
       } else {
         // Create new note
         const { createNote } = await import('@/lib/notes')
@@ -89,9 +49,10 @@ function NotesPageContent() {
           user_id: user!.id,
           course_id: selectedCourse!.id
         } as Omit<Note, 'id' | 'created_at' | 'updated_at'>)
+        // Refresh to get the new note with all metadata
+        await refreshData()
       }
       
-      await loadData()
       setIsEditorOpen(false)
     } catch (error) {
       console.error('Error saving note:', error)
@@ -104,7 +65,7 @@ function NotesPageContent() {
     try {
       const { deleteNote } = await import('@/lib/notes')
       await deleteNote(noteId)
-      await loadData()
+      deleteNoteLocally(noteId)
     } catch (error) {
       console.error('Error deleting note:', error)
     }
@@ -113,8 +74,8 @@ function NotesPageContent() {
   const handleToggleShare = async (note: Note) => {
     try {
       const { updateNote } = await import('@/lib/notes')
-      await updateNote(note.id, { is_shared: !note.is_shared })
-      await loadData()
+      const updated = await updateNote(note.id, { is_shared: !note.is_shared })
+      updateNoteLocally(note.id, updated)
     } catch (error) {
       console.error('Error toggling share:', error)
     }
@@ -140,7 +101,16 @@ function NotesPageContent() {
     })
   }
 
-  const filteredNotes = notes.filter(note => {
+  const enrichedNotes = notes.map(note => {
+    const course = courses.find(c => c.id === note.course_id)
+    return {
+      ...note,
+      course_name: course?.name || 'Unknown Course',
+      course_code: course?.code || 'N/A'
+    }
+  })
+
+  const filteredNotes = enrichedNotes.filter(note => {
     const matchesSearch = !searchQuery || 
       note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       note.content.toLowerCase().includes(searchQuery.toLowerCase())

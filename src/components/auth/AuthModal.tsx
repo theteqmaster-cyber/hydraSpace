@@ -6,7 +6,7 @@ import { X, Mail, Lock, User, GraduationCap, Eye, EyeOff, Loader2 } from 'lucide
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { signUp, signIn } from '@/lib/auth'
+import { signUp, signIn, sendPasswordResetEmail } from '@/lib/auth'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -14,8 +14,10 @@ interface AuthModalProps {
   onAuthSuccess: () => void
 }
 
+type AuthMode = 'signin' | 'signup' | 'reset'
+
 export const AuthModal = ({ isOpen, onClose, onAuthSuccess }: AuthModalProps) => {
-  const [isSignUp, setIsSignUp] = useState(false)
+  const [mode, setMode] = useState<AuthMode>('signin')
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -25,24 +27,27 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }: AuthModalProps) =>
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setSuccessMessage('')
     setIsLoading(true)
 
     try {
-      if (isSignUp) {
+      if (mode === 'signup') {
         await signUp(formData.email, formData.password, formData.name, formData.university)
-      } else {
+        onAuthSuccess()
+        onClose()
+      } else if (mode === 'signin') {
         await signIn(formData.email, formData.password)
+        onAuthSuccess()
+        onClose()
+      } else if (mode === 'reset') {
+        await sendPasswordResetEmail(formData.email)
+        setSuccessMessage('Recovery link sent! Check your inbox.')
       }
-      
-      // Wait a moment for auth state to update
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      onAuthSuccess()
-      onClose()
     } catch (err: any) {
       setError(err.message || 'An error occurred')
     } finally {
@@ -53,11 +58,12 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }: AuthModalProps) =>
   const resetForm = () => {
     setFormData({ email: '', password: '', name: '', university: '' })
     setError('')
+    setSuccessMessage('')
     setShowPassword(false)
   }
 
-  const switchMode = () => {
-    setIsSignUp(!isSignUp)
+  const switchMode = (newMode: AuthMode) => {
+    setMode(newMode)
     resetForm()
   }
 
@@ -65,7 +71,7 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }: AuthModalProps) =>
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -73,44 +79,38 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }: AuthModalProps) =>
         >
           <motion.div
             className="w-full max-w-md"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <Card>
-              <CardHeader>
+            <Card className="border-none shadow-2xl overflow-hidden">
+              <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
                       <GraduationCap className="w-5 h-5 text-white" />
                     </div>
                     <h2 className="text-xl font-bold text-gray-900">
-                      {isSignUp ? 'Join HydraSpace' : 'Welcome Back'}
+                      {mode === 'signup' ? 'Join HydraSpace' : mode === 'signin' ? 'Welcome Back' : 'Reset Password'}
                     </h2>
                   </div>
                   <button
                     onClick={onClose}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                   >
-                    <X className="w-5 h-5 text-gray-500" />
+                    <X className="w-5 h-5 text-gray-400" />
                   </button>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">
-                  {isSignUp 
-                    ? 'Create your account to start organizing your academic life'
-                    : 'Sign in to access your courses and notes'
-                  }
-                </p>
               </CardHeader>
               
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {isSignUp && (
+                  {mode === 'signup' && (
                     <Input
                       label="Full Name"
-                      placeholder="Enter your full name"
+                      placeholder="Enter your name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       icon={<User className="w-4 h-4" />}
@@ -128,34 +128,45 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }: AuthModalProps) =>
                     required
                   />
 
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        className="w-full px-3 py-2 pl-10 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter your password"
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        required
-                      />
-                      <Lock className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                  {mode !== 'reset' && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Password
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => switchMode('reset')}
+                          className="text-xs font-bold text-blue-600 hover:text-blue-700"
+                        >
+                          Forgot?
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          className="w-full h-11 px-3 py-2 pl-10 pr-10 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                          placeholder="Your password"
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          required
+                        />
+                        <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-400" />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  {isSignUp && (
+                  {mode === 'signup' && (
                     <Input
                       label="University (Optional)"
-                      placeholder="e.g., National University of Science and Technology"
+                      placeholder="e.g., NUST"
                       value={formData.university}
                       onChange={(e) => setFormData({ ...formData, university: e.target.value })}
                       icon={<GraduationCap className="w-4 h-4" />}
@@ -164,41 +175,49 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }: AuthModalProps) =>
 
                   {error && (
                     <motion.div
-                      className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm"
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-medium"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
                     >
                       {error}
+                    </motion.div>
+                  )}
+
+                  {successMessage && (
+                    <motion.div
+                      className="p-3 bg-green-50 border border-green-100 rounded-xl text-green-600 text-xs font-medium text-center"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                    >
+                      {successMessage}
                     </motion.div>
                   )}
 
                   <Button
                     type="submit"
                     variant="primary"
-                    className="w-full"
+                    className="w-full h-12 rounded-xl shadow-lg shadow-blue-600/20 font-bold"
                     disabled={isLoading}
                   >
                     {isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {isSignUp ? 'Creating Account...' : 'Signing In...'}
-                      </>
+                      <div className="flex items-center space-x-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>{mode === 'signup' ? 'Creating...' : mode === 'signin' ? 'Signing In...' : 'Sending...'}</span>
+                      </div>
                     ) : (
-                      <>
-                        {isSignUp ? 'Create Account' : 'Sign In'}
-                      </>
+                      <span>{mode === 'signup' ? 'Create Account' : mode === 'signin' ? 'Sign In' : 'Send Recovery Link'}</span>
                     )}
                   </Button>
                 </form>
 
-                <div className="mt-6 text-center">
-                  <p className="text-sm text-gray-600">
-                    {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+                <div className="mt-8 text-center">
+                  <p className="text-sm text-gray-500 font-medium tracking-tight">
+                    {mode === 'signup' ? 'Already a member?' : mode === 'signin' ? "Not a member yet?" : "Remembered?"}
                     <button
-                      onClick={switchMode}
-                      className="ml-1 text-blue-600 hover:text-blue-700 font-medium"
+                      onClick={() => switchMode(mode === 'signup' ? 'signin' : 'signup')}
+                      className="ml-2 text-blue-600 hover:text-blue-700 font-bold"
                     >
-                      {isSignUp ? 'Sign In' : 'Sign Up'}
+                      {mode === 'signup' ? 'Login' : mode === 'signin' ? 'Join Now' : 'Sign In'}
                     </button>
                   </p>
                 </div>

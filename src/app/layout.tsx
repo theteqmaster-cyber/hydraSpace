@@ -23,7 +23,6 @@ export default function RootLayout({
         <AuthProvider>
           <DataProvider>
             {children}
-            {process.env.NODE_ENV === 'development' && <AuthDebug />}
           </DataProvider>
         </AuthProvider>
       </body>

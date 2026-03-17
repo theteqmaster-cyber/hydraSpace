@@ -22,10 +22,9 @@ export const EventEditor = ({
   const [formData, setFormData] = useState({
     title: event?.title || '',
     description: event?.description || '',
-    date: event?.date || new Date().toISOString().split('T')[0],
-    time: event?.time || '09:00',
+    date: event?.start_time ? new Date(event.start_time).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    time: event?.start_time ? new Date(event.start_time).toTimeString().split(' ')[0].substring(0, 5) : '09:00',
     type: event?.type || 'other' as const,
-    location: event?.location || '',
     course_id: event?.course_id || ''
   })
   
@@ -35,8 +34,7 @@ export const EventEditor = ({
   const eventTypes = [
     { value: 'lecture', label: 'Lecture', color: 'bg-green-100 text-green-800 border-green-300' },
     { value: 'assignment', label: 'Assignment', color: 'bg-blue-100 text-blue-800 border-blue-300' },
-    { value: 'exam', label: 'Exam', color: 'bg-red-100 text-red-800 border-red-300' },
-    { value: 'meeting', label: 'Meeting', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+    { value: 'test', label: 'Test/Exam', color: 'bg-red-100 text-red-800 border-red-300' },
     { value: 'other', label: 'Other', color: 'bg-gray-100 text-gray-800 border-gray-300' }
   ] as const
 
@@ -52,7 +50,20 @@ export const EventEditor = ({
     setSaveStatus('saving')
 
     try {
-      await onSave(formData)
+      const start_time = `${formData.date}T${formData.time}:00Z`
+      // For simplicity, make end_time 1 hour after start_time if not specified
+      const endDate = new Date(start_time)
+      endDate.setHours(endDate.getHours() + 1)
+      const end_time = endDate.toISOString()
+
+      await onSave({
+        title: formData.title,
+        description: formData.description,
+        start_time,
+        end_time,
+        type: formData.type as any,
+        course_id: formData.course_id || undefined
+      } as any)
       
       setSaveStatus('saved')
       setTimeout(() => {
@@ -137,7 +148,7 @@ export const EventEditor = ({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Event Type
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {eventTypes.map(({ value, label, color }) => (
                   <button
                     key={value}
@@ -186,19 +197,6 @@ export const EventEditor = ({
               </div>
             </div>
 
-            {/* Location */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <MapPin className="w-4 h-4 inline mr-1" />
-                Location
-              </label>
-              <Input
-                value={formData.location}
-                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                placeholder="e.g., Room 101, Online, Library..."
-                className="w-full"
-              />
-            </div>
 
             {/* Description */}
             <div>

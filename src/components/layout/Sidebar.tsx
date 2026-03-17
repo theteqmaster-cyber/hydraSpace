@@ -24,7 +24,7 @@ export const Sidebar = () => {
     { href: '/calendar', icon: Calendar, label: 'Calendar', active: pathname === '/calendar' },
     { href: '/timetable', icon: Clock, label: 'Timetable', active: pathname === '/timetable' },
     { href: '/notes', icon: FileText, label: 'Notes', active: pathname === '/notes' },
-    { href: '/help', icon: HelpCircle, label: 'Help', active: pathname === '/help' },
+    { href: '/help', icon: HelpCircle, label: 'HydraSpace', active: pathname === '/help' },
   ]
 
   const quickStats = [

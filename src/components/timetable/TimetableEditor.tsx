@@ -83,8 +83,8 @@ export const TimetableEditor = ({
       setTimeout(() => {
         onCancel()
       }, 1000)
-    } catch (error) {
-      console.error('Error saving timetable entry:', error)
+    } catch (err: any) {
+      console.error('Error saving timetable entry:', err?.message || err)
       setSaveStatus('error')
       setTimeout(() => {
         setSaveStatus('idle')

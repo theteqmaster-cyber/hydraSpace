@@ -17,11 +17,15 @@ interface DataState {
   isOffline: boolean
   lastSyncTime: Date | null
   refreshData: () => Promise<void>
-  updateLocalData: (type: 'courses' | 'notes' | 'sharedNotes' | 'events', data: any[]) => void
+  updateLocalData: (type: 'courses' | 'notes' | 'sharedNotes' | 'events' | 'timetable', data: any[]) => void
   addNote: (note: Note) => void
   updateNote: (id: string, updates: Partial<Note>) => void
   deleteNote: (id: string) => void
   addEvent: (event: CalendarEvent) => void
+  timetableEntries: any[]
+  addTimetableEntry: (entry: any) => void
+  updateTimetableEntry: (id: string, updates: any) => void
+  deleteTimetableEntry: (id: string) => void
 }
 
 const DataContext = createContext<DataState | undefined>(undefined)
@@ -32,6 +36,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [notes, setNotes] = useState<Note[]>([])
   const [sharedNotes, setSharedNotes] = useState<Note[]>([])
   const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [timetableEntries, setTimetableEntries] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isOffline, setIsOffline] = useState(false)
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
@@ -43,12 +48,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const savedNotes = localStorage.getItem('hydraspace_notes')
       const savedSharedNotes = localStorage.getItem('hydraspace_shared_notes')
       const savedEvents = localStorage.getItem('hydraspace_events')
+      const savedTimetable = localStorage.getItem('hydraspace_timetable')
       const savedSyncTime = localStorage.getItem('hydraspace_last_sync')
 
       if (savedCourses) setCourses(JSON.parse(savedCourses))
       if (savedNotes) setNotes(JSON.parse(savedNotes))
       if (savedSharedNotes) setSharedNotes(JSON.parse(savedSharedNotes))
       if (savedEvents) setEvents(JSON.parse(savedEvents))
+      if (savedTimetable) setTimetableEntries(JSON.parse(savedTimetable))
       if (savedSyncTime) setLastSyncTime(new Date(savedSyncTime))
     }
   }, [])
@@ -60,11 +67,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('hydraspace_notes', JSON.stringify(notes))
       localStorage.setItem('hydraspace_shared_notes', JSON.stringify(sharedNotes))
       localStorage.setItem('hydraspace_events', JSON.stringify(events))
+      localStorage.setItem('hydraspace_timetable', JSON.stringify(timetableEntries))
       if (lastSyncTime) {
         localStorage.setItem('hydraspace_last_sync', lastSyncTime.toISOString())
       }
     }
-  }, [courses, notes, sharedNotes, events, lastSyncTime])
+  }, [courses, notes, sharedNotes, events, timetableEntries, lastSyncTime])
 
   // Monitor network status
   useEffect(() => {
@@ -104,24 +112,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
       console.log('Supabase Key configured:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
 
       // Fetch all data in parallel
-      const [coursesData, notesData, sharedNotesData, eventsData] = await Promise.all([
+      const { getTimetableEntries } = await import('@/lib/timetable')
+      const [coursesData, notesData, sharedNotesData, eventsData, timetableData] = await Promise.all([
         getCourses(user.id),
         getNotes(user.id),
         getSharedNotes(),
-        getEvents(user.id)
+        getEvents(user.id),
+        getTimetableEntries(user.id)
       ])
 
       console.log('Raw data received:', {
         courses: coursesData?.length,
         notes: notesData?.length,
         sharedNotes: sharedNotesData?.length,
-        events: eventsData?.length
+        events: eventsData?.length,
+        timetable: timetableData?.length
       })
 
       setCourses(coursesData?.map(c => ({ ...c, code: c.code || '' })) || [])
       setNotes(notesData || [])
       setSharedNotes(sharedNotesData || [])
       setEvents(eventsData || [])
+      setTimetableEntries(timetableData || [])
       setLastSyncTime(new Date())
 
       console.log('All data preloaded successfully')
@@ -149,7 +161,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // Initial data load when user signs in
   useEffect(() => {
-    if (user && courses.length === 0 && notes.length === 0) {
+    if (user) {
       refreshData()
     }
   }, [user])
@@ -167,6 +179,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         break
       case 'events':
         setEvents(data)
+        break
+      case 'timetable':
+        setTimetableEntries(data)
         break
     }
   }
@@ -189,6 +204,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setEvents(prev => [event, ...prev])
   }
 
+  const addTimetableEntry = (entry: any) => {
+    setTimetableEntries(prev => [...prev, entry])
+  }
+
+  const updateTimetableEntry = (id: string, updates: any) => {
+    setTimetableEntries(prev => prev.map(entry => 
+      entry.id === id ? { ...entry, ...updates } : entry
+    ))
+  }
+
+  const deleteTimetableEntry = (id: string) => {
+    setTimetableEntries(prev => prev.filter(entry => entry.id !== id))
+  }
+
   return (
     <DataContext.Provider
       value={{
@@ -196,6 +225,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         notes,
         sharedNotes,
         events,
+        timetableEntries,
         isLoading,
         isOffline,
         lastSyncTime,
@@ -204,7 +234,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         addNote,
         updateNote,
         deleteNote,
-        addEvent
+        addEvent,
+        addTimetableEntry,
+        updateTimetableEntry,
+        deleteTimetableEntry
       }}
     >
       {children}

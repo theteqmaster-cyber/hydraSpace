@@ -7,24 +7,10 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
-import { createEvent } from '@/lib/events'
+import { createEvent, CalendarEvent } from '@/lib/events'
 import { Calendar, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { EventEditor } from '@/components/calendar/EventEditor'
-
-interface CalendarEvent {
-  id: string
-  title: string
-  description?: string
-  date: string
-  time: string
-  location?: string
-  type: 'assignment' | 'exam' | 'lecture' | 'meeting' | 'other'
-  course_id?: string
-  user_id: string
-  created_at: string
-  updated_at: string
-}
 
 function CalendarPageContent() {
   const { user } = useAuth()
@@ -45,7 +31,7 @@ function CalendarPageContent() {
     setIsEventEditorOpen(true)
   }
 
-  const handleSaveEvent = async (eventData: Omit<CalendarEvent, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const handleSaveEvent = async (eventData: any) => {
     try {
       if (selectedEvent?.id) {
         // Update existing event
@@ -86,15 +72,14 @@ function CalendarPageContent() {
 
   const getEventsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0]
-    return events.filter(event => event.date === dateStr)
+    return events.filter(event => event.start_time.startsWith(dateStr))
   }
 
   const getEventColor = (type: string) => {
     switch (type) {
       case 'assignment': return 'bg-blue-100 text-blue-800 border-blue-300'
-      case 'exam': return 'bg-red-100 text-red-800 border-red-300'
+      case 'test': return 'bg-red-100 text-red-800 border-red-300'
       case 'lecture': return 'bg-green-100 text-green-800 border-green-300'
-      case 'meeting': return 'bg-purple-100 text-purple-800 border-purple-300'
       default: return 'bg-gray-100 text-gray-800 border-gray-300'
     }
   }
@@ -271,7 +256,7 @@ function CalendarPageContent() {
                             <div key={event.id} className={`p-3 rounded-lg border ${getEventColor(event.type)} cursor-pointer`} onClick={() => handleEditEvent(event)}>
                               <div className="font-medium text-sm">{event.title}</div>
                               <div className="text-xs opacity-75 mt-1">
-                                {event.time} • {event.location || 'No location'}
+                                {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </div>
                               {event.course_id && (
                                 <div className="text-xs opacity-75 mt-1">
@@ -290,15 +275,15 @@ function CalendarPageContent() {
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Events</h3>
                     <div className="space-y-3">
                       {events
-                        .filter(event => new Date(event.date) >= new Date())
-                        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                        .filter(event => new Date(event.start_time) >= new Date())
+                        .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
                         .slice(0, 5)
                         .map(event => (
                           <div key={event.id} className="flex items-start space-x-3">
                             <div className="flex-1">
                               <div className="font-medium text-sm text-gray-900">{event.title}</div>
                               <div className="text-xs text-gray-500 mt-1">
-                                {new Date(event.date).toLocaleDateString()} • {event.time}
+                                {new Date(event.start_time).toLocaleDateString()} • {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </div>
                             </div>
                           </div>

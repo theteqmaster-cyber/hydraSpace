@@ -78,8 +78,8 @@ export const Footer = () => {
             <p className="text-gray-400 text-sm">
               © {new Date().getFullYear()} HydraSpace. Built with ❤️ for university students.
             </p>
-            <p className="text-gray-400 text-sm">
-              Created by mphathisi for NUST students
+            <p className="text-gray-400 text-sm font-medium tracking-tight">
+              Created by <a href="https://portfolio-site-for-mphatic-teqmaste.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-400 hover:underline transition-all">mphathisi</a> for NUST students
             </p>
           </div>
         </div>

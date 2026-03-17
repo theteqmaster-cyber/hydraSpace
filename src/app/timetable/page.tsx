@@ -33,66 +33,94 @@ interface TimetableEntry {
 
 function TimetablePageContent() {
   const { user } = useAuth()
-  const { courses } = useData()
+  const { 
+    courses, 
+    timetableEntries, 
+    addTimetableEntry, 
+    updateTimetableEntry, 
+    deleteTimetableEntry,
+    refreshData 
+  } = useData()
   const [selectedDay, setSelectedDay] = useState('Monday')
   const [isEditorOpen, setIsEditorOpen] = useState(false)
-  const [selectedEntry, setSelectedEntry] = useState<TimetableEntry | null>(null)
-  const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([])
-
-  // Load timetable entries from localStorage on mount
-  useEffect(() => {
-    const savedEntries = localStorage.getItem('hydraspace_timetable_entries')
-    if (savedEntries) {
-      setTimetableEntries(JSON.parse(savedEntries))
-    }
-  }, [])
-
-  // Save to localStorage whenever entries change
-  useEffect(() => {
-    localStorage.setItem('hydraspace_timetable_entries', JSON.stringify(timetableEntries))
-  }, [timetableEntries])
+  const [selectedEntry, setSelectedEntry] = useState<any | null>(null)
 
   const handleAddEntry = () => {
     setSelectedEntry(null)
     setIsEditorOpen(true)
   }
 
-  const handleEditEntry = (entry: TimetableEntry) => {
+  const handleEditEntry = (entry: any) => {
     setSelectedEntry(entry)
     setIsEditorOpen(true)
   }
 
-  const handleSaveEntry = async (entryData: Omit<TimetableEntry, 'id'>) => {
+  const handleSaveEntry = async (entryData: any) => {
     try {
+      const { createTimetableEntry, updateTimetableEntry: updateTimetableDb } = await import('@/lib/timetable')
+      
+      // Map UI day string to database integer
+      const dayMap: Record<string, number> = {
+        'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5
+      }
+
+      // Calculate end time correctly based on minutes
+      const durationMinutes = parseInt(entryData.duration) || 60
+      const [startH, startM] = entryData.time.split(':').map(Number)
+      const startTotalMinutes = startH * 60 + startM
+      const endTotalMinutes = startTotalMinutes + durationMinutes
+      
+      const endHour = Math.floor(endTotalMinutes / 60)
+      const endMin = endTotalMinutes % 60
+      const end_time = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}:00`
+      const start_time = `${startH.toString().padStart(2, '0')}:${startM.toString().padStart(2, '0')}:00`
+
+      const payload = {
+        course_id: entryData.course_id || undefined,
+        day_of_week: dayMap[entryData.day] || 1,
+        start_time,
+        end_time,
+        title: entryData.course_name || 'Untitled Class',
+        location: entryData.location,
+        type: entryData.type as any
+      }
+
+      if (!user?.id) {
+        throw new Error('User session not found. Please log in again.')
+      }
+
       if (selectedEntry?.id) {
-        // Update existing entry
-        setTimetableEntries(prev => 
-          prev.map(entry => 
-            entry.id === selectedEntry.id 
-              ? { ...entryData, id: selectedEntry.id }
-              : entry
-          )
-        )
+        // Update in DB
+        await updateTimetableDb(selectedEntry.id, payload as any)
+        updateTimetableEntry(selectedEntry.id, payload)
       } else {
-        // Create new entry
-        const newEntry: TimetableEntry = {
-          ...entryData,
-          id: Date.now().toString()
-        }
-        setTimetableEntries(prev => [...prev, newEntry])
+        // Create in DB
+        const newEntry = await createTimetableEntry(payload as any, user.id)
+        addTimetableEntry(newEntry)
       }
       
+      refreshData()
       setIsEditorOpen(false)
       setSelectedEntry(null)
-    } catch (error) {
-      console.error('Error saving timetable entry:', error)
-      throw error
+    } catch (err: any) {
+      // Safer logging that won't show empty object for Error types
+      const errorMsg = err?.message || 'Unknown save error'
+      console.error('Error saving timetable entry:', errorMsg)
+      if (err?.details) console.error('Details:', err.details)
+      if (err?.hint) console.error('Hint:', err.hint)
+      throw err
     }
   }
 
-  const handleDeleteEntry = (id: string) => {
+  const handleDeleteEntry = async (id: string) => {
     if (confirm('Are you sure you want to delete this timetable entry?')) {
-      setTimetableEntries(prev => prev.filter(entry => entry.id !== id))
+      try {
+        const { deleteTimetableEntry: deleteTimetableDb } = await import('@/lib/timetable')
+        await deleteTimetableDb(id)
+        deleteTimetableEntry(id)
+      } catch (error) {
+        console.error('Error deleting timetable entry:', error)
+      }
     }
   }
 
@@ -120,14 +148,19 @@ function TimetablePageContent() {
     '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'
   ]
 
-  const filteredEntries = timetableEntries.filter(entry => entry.day === selectedDay)
-    .sort((a, b) => a.time.localeCompare(b.time))
+  const dayMapRev: Record<number, string> = {
+    1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday'
+  }
+
+  const filteredEntries = timetableEntries
+    .filter(entry => dayMapRev[entry.day_of_week] === selectedDay)
+    .sort((a, b) => a.start_time.localeCompare(b.start_time))
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header onCreateCourse={() => {}} />
       
-      <main className="flex-1 flex">
+      <main className="min-h-screen flex">
         <Sidebar />
         
         <main className="flex-1 p-8">
@@ -214,18 +247,14 @@ function TimetablePageContent() {
                             <div className="flex items-center space-x-3 mb-2">
                               <Icon className="w-5 h-5" />
                               <span className="font-medium capitalize">{entry.type}</span>
-                              <span className="text-sm opacity-75">{entry.duration}</span>
                             </div>
                             
-                            <h3 className="font-semibold text-lg mb-1">{entry.course_name || 'Untitled Course'}</h3>
-                            {entry.course_code && (
-                              <p className="text-sm text-gray-600 mb-2">{entry.course_code}</p>
-                            )}
+                            <h3 className="font-semibold text-lg mb-1">{entry.title || 'Untitled Course'}</h3>
                             
                             <div className="flex items-center space-x-4 text-sm text-gray-600">
                               <div className="flex items-center space-x-1">
                                 <Clock className="w-4 h-4" />
-                                <span>{entry.time}</span>
+                                <span>{entry.start_time.substring(0, 5)} - {entry.end_time.substring(0, 5)}</span>
                               </div>
                               <div className="flex items-center space-x-1">
                                 <MapPin className="w-4 h-4" />

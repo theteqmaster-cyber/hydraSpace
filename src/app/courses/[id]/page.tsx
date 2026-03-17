@@ -28,7 +28,7 @@ type TabType = 'notes' | 'examtips' | 'assignments'
 function CourseDetailPageContent() {
   const params = useParams()
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, isLoading: isAuthLoading } = useAuth()
   const { courses, notes, isLoading, refreshData } = useData()
   const courseId = params.id as string
   
@@ -37,16 +37,13 @@ function CourseDetailPageContent() {
   const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false)
   const [selectedNote, setSelectedNote] = useState<Note | null>(null)
 
+  // Synchronize local course state with the courses array from context
   useEffect(() => {
-    const foundCourse = courses.find(c => c.id === courseId)
-    setCourse(foundCourse || null)
-  }, [courseId, courses])
-
-  useEffect(() => {
-    if (!course && courses.length > 0) {
-      router.push('/courses')
+    if (courses.length > 0) {
+      const foundCourse = courses.find(c => c.id === courseId)
+      setCourse(foundCourse || null)
     }
-  }, [course, courses, router])
+  }, [courseId, courses])
 
   if (!course) {
     return (
@@ -57,9 +54,27 @@ function CourseDetailPageContent() {
           <Sidebar />
           
           <main className="flex-1 p-8">
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading course...</p>
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl shadow-sm border border-gray-200">
+              {isLoading || isAuthLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                  <p className="text-gray-600">Syncing course data...</p>
+                </>
+              ) : (
+                <>
+                  <div className="bg-red-50 p-4 rounded-full mb-4">
+                    <AlertCircle className="w-12 h-12 text-red-500" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Course Not Found</h2>
+                  <p className="text-gray-600 mb-8 max-w-sm text-center">
+                    We couldn't find the course you're looking for. It may have been deleted or the link might be incorrect.
+                  </p>
+                  <Button onClick={() => router.push('/courses')}>
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to My Courses
+                  </Button>
+                </>
+              )}
             </div>
           </main>
         </main>
@@ -159,21 +174,6 @@ function CourseDetailPageContent() {
         <Sidebar />
         
         <main className="flex-1 p-8">
-          {/* Debug Info - Remove in production */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mb-4 p-4 bg-yellow-100 border border-yellow-300 rounded-lg text-sm">
-              <p><strong>Debug Info:</strong></p>
-              <p>User ID: {user?.id || 'Not authenticated'}</p>
-              <p>User Email: {user?.email || 'No email'}</p>
-              <p>User Name: {user?.name || 'No name'}</p>
-              <p>Course ID: {courseId}</p>
-              <p>Course Found: {course ? 'Yes' : 'No'}</p>
-              <p>Total Notes Loaded: {notes.length}</p>
-              <p>Course Notes: {notes.filter(n => n.course_id === courseId).length}</p>
-              <p>Loading: {isLoading ? 'Yes' : 'No'}</p>
-              <p>Auth Loading: {useAuth().isLoading ? 'Yes' : 'No'}</p>
-            </div>
-          )}
 
           {/* Course Header */}
           <div className="mb-8">
