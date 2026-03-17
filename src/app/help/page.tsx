@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { BottomNav } from '@/components/layout/BottomNav'
 import { Footer } from '@/components/layout/Footer'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { 
@@ -28,7 +29,7 @@ function HelpPageContent() {
       <main className="flex-1 flex">
         <Sidebar />
         
-        <main className="flex-1 p-8 lg:p-12 overflow-y-auto max-h-screen custom-scrollbar">
+        <main className="flex-1 p-4 md:p-8 mobile-safe-padding overflow-y-auto max-h-screen custom-scrollbar">
           <div className="max-w-4xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -128,6 +129,7 @@ function HelpPageContent() {
       </main>
 
       <Footer />
+      <BottomNav />
     </div>
   )
 }

@@ -35,7 +35,7 @@ export const Sidebar = () => {
 
   return (
     <motion.aside
-      className="w-64 bg-white border-r border-gray-200 min-h-screen p-6"
+      className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 min-h-screen p-6 sticky top-16"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}

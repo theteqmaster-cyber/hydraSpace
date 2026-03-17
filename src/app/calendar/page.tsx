@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { BottomNav } from '@/components/layout/BottomNav'
 import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
@@ -111,7 +112,7 @@ function CalendarPageContent() {
       <div className="flex-1 flex">
         <Sidebar />
         
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 md:p-8 mobile-safe-padding">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -119,9 +120,9 @@ function CalendarPageContent() {
           >
             {/* Header */}
             <div className="mb-8">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
+                  <h1 className="text-fluid-h2 text-gray-900">Calendar</h1>
                   <p className="text-gray-600 mt-2">
                     Your academic calendar and events
                     {isOffline && (
@@ -136,15 +137,16 @@ function CalendarPageContent() {
                     )}
                   </p>
                 </div>
-                <div className="flex space-x-4">
+                <div className="flex space-x-2 w-full md:w-auto">
                   <Button
                     variant="secondary"
                     onClick={refreshData}
                     disabled={isLoading}
+                    className="flex-1 md:flex-none"
                   >
-                    {isLoading ? 'Refreshing...' : 'Refresh'}
+                    {isLoading ? '...' : 'Refresh'}
                   </Button>
-                  <Button onClick={handleAddEvent}>
+                  <Button onClick={handleAddEvent} className="flex-1 md:flex-none font-bold">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Event
                   </Button>
@@ -318,6 +320,7 @@ function CalendarPageContent() {
           }}
         />
       )}
+      <BottomNav />
     </div>
   )
 }

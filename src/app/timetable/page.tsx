@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { BottomNav } from '@/components/layout/BottomNav'
 import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
@@ -163,7 +164,7 @@ function TimetablePageContent() {
       <main className="min-h-screen flex">
         <Sidebar />
         
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 md:p-8 mobile-safe-padding">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -171,9 +172,9 @@ function TimetablePageContent() {
           >
             {/* Header */}
             <div className="mb-8">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Timetable</h1>
+                  <h1 className="text-fluid-h2 text-gray-900">Timetable</h1>
                   <p className="text-gray-600 mt-2">
                     Your weekly class schedule
                     <span className="ml-2 text-sm text-gray-500">
@@ -181,7 +182,7 @@ function TimetablePageContent() {
                     </span>
                   </p>
                 </div>
-                <Button onClick={handleAddEntry}>
+                <Button onClick={handleAddEntry} className="w-full md:w-auto font-bold py-4">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Entry
                 </Button>
@@ -189,8 +190,8 @@ function TimetablePageContent() {
             </div>
 
             {/* Day Selector */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 mb-6">
-              <div className="flex space-x-2">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 mb-6 overflow-x-auto custom-scrollbar">
+              <div className="flex space-x-2 min-w-max md:min-w-0">
                 {days.map(day => (
                   <button
                     key={day}
@@ -351,6 +352,7 @@ function TimetablePageContent() {
           }}
         />
       )}
+      <BottomNav />
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { BottomNav } from '@/components/layout/BottomNav'
 import { Footer } from '@/components/layout/Footer'
 import { CourseCard } from '@/components/courses/CourseCard'
 import { CreateCourseModal } from '@/components/courses/CreateCourseModal'
@@ -224,7 +225,7 @@ function HomeContent() {
       <main className="flex-1 flex">
         <Sidebar />
         
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 md:p-8 mobile-safe-padding">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -232,9 +233,9 @@ function HomeContent() {
           >
             {/* Header */}
             <div className="mb-8">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+                  <h1 className="text-fluid-h1 text-gray-900">
                     Welcome back, <span className="text-blue-600">{user.name?.split(' ')[0] || 'Student'}</span>!
                   </h1>
                   <p className="text-gray-500 mt-3 text-lg">
@@ -387,7 +388,7 @@ function HomeContent() {
           }
         }}
       />
-
+      <BottomNav />
     </div>
   )
 }

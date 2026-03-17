@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { BottomNav } from '@/components/layout/BottomNav'
 import { Footer } from '@/components/layout/Footer'
 import { NoteEditor } from '@/components/notes/NoteEditor'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
@@ -153,18 +154,18 @@ function NotesPageContent() {
       <main className="flex-1 flex">
         <Sidebar />
         
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 md:p-8 mobile-safe-padding">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="mb-8 flex justify-between items-center">
+            <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">My Notes</h1>
+                <h1 className="text-fluid-h2 text-gray-900 mb-2">My Notes</h1>
                 <p className="text-gray-600">View and manage all your academic notes</p>
               </div>
-              <Button onClick={handleCreateNote} disabled={courses.length === 0}>
+              <Button onClick={handleCreateNote} disabled={courses.length === 0} className="w-full md:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 New Note
               </Button>
@@ -322,6 +323,7 @@ function NotesPageContent() {
           </div>
         </div>
       )}
+      <BottomNav />
     </div>
   )
 }

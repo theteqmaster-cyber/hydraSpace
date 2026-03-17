@@ -59,6 +59,7 @@ export const signOut = async () => {
 
 export const sendPasswordResetEmail = async (email: string) => {
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+    // Uses the current site's origin to ensure the link matches the environment (local vs prod)
     redirectTo: `${window.location.origin}/reset-password`,
   })
   if (error) throw error

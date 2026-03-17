@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { BottomNav } from '@/components/layout/BottomNav'
 import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
@@ -84,7 +85,7 @@ function CommunityPageContent() {
       <main className="flex-1 flex">
         <Sidebar />
         
-        <main className="flex-1 p-8 lg:p-12 overflow-y-auto max-h-screen custom-scrollbar">
+        <main className="flex-1 p-4 md:p-8 mobile-safe-padding overflow-y-auto max-h-screen custom-scrollbar">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -102,10 +103,10 @@ function CommunityPageContent() {
                   <span className="w-8 h-[2px] bg-blue-600"></span>
                   <span>Community Network</span>
                 </motion.div>
-                <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight">
+                <h1 className="text-fluid-h1 text-gray-900">
                   Academic <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Library</span>
                 </h1>
-                <p className="text-gray-500 mt-4 text-lg max-w-xl leading-relaxed">
+                <p className="text-gray-500 mt-4 text-base md:text-lg max-w-xl leading-relaxed">
                   Discover, share, and expand your knowledge with curated notes from fellow high-achieving students.
                 </p>
               </div>
@@ -276,6 +277,7 @@ function CommunityPageContent() {
           onClose={() => setIsPreviewOpen(false)}
         />
       )}
+      <BottomNav />
     </div>
   )
 }
