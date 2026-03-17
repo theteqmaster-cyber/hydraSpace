@@ -69,9 +69,6 @@ function HomeContent() {
     return notes.filter(note => note.course_id === courseId && note.is_shared).length
   }
 
-  if (isAuthLoading) {
-    return <LoadingScreen />
-  }
 
   if (!user) {
     return (
