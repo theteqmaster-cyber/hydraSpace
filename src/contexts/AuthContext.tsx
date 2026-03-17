@@ -16,24 +16,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      console.log('Initializing auth...')
-      try {
-        const currentUser = await getCurrentUser()
-        console.log('Current user:', currentUser)
-        setUser(currentUser)
-      } catch (error) {
-        console.error('Error initializing auth:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    initializeAuth()
-
-    const { data: { subscription } } = onAuthStateChange((user) => {
-      console.log('Auth context received user:', user)
-      setUser(user)
+    const { data: { subscription } } = onAuthStateChange((currentUser) => {
+      console.log('Auth context received user:', currentUser)
+      setUser(currentUser)
       setIsLoading(false)
     })
 

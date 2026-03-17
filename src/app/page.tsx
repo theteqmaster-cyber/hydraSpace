@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
 import { useRouter } from 'next/navigation'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
+import { AuthModal } from '@/components/auth/AuthModal'
 
 interface Course {
   id: string
@@ -47,6 +48,7 @@ function HomeContent() {
   const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
   const [selectedNote, setSelectedNote] = useState<Note | null>(null)
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
 
   const handleCreateCourse = () => {
     setIsCreateCourseModalOpen(true)
@@ -125,10 +127,10 @@ function HomeContent() {
               >
                 <Button 
                   size="lg" 
-                  onClick={() => window.location.href = '/courses'}
+                  onClick={() => setIsAuthModalOpen(true)}
                   className="h-16 px-10 rounded-2xl text-lg font-bold shadow-2xl shadow-blue-600/30 group"
                 >
-                  Start Your Journey
+                  Enter HydraSpace
                   <span className="ml-2 group-hover:translate-x-1 transition-transform">🚀</span>
                 </Button>
                 <Button 
@@ -219,6 +221,14 @@ function HomeContent() {
         </section>
         
         <Footer />
+        
+        {isAuthModalOpen && (
+          <AuthModal 
+            isOpen={isAuthModalOpen} 
+            onClose={() => setIsAuthModalOpen(false)} 
+            onAuthSuccess={() => router.push('/courses')}
+          />
+        )}
       </div>
     )
   }

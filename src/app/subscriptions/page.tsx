@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Footer } from '@/components/layout/Footer'
-import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { 
   CheckCircle, 
   Crown, 
@@ -295,9 +295,5 @@ function SubscriptionsPageContent() {
 }
 
 export default function SubscriptionsPage() {
-  return (
-    <AuthProvider>
-      <SubscriptionsPageContent />
-    </AuthProvider>
-  )
+  return <SubscriptionsPageContent />
 }

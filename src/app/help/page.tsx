@@ -5,7 +5,7 @@ import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { Footer } from '@/components/layout/Footer'
-import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { 
   BookOpen, 
   Users, 
@@ -135,9 +135,5 @@ function HelpPageContent() {
 }
 
 export default function HelpPage() {
-  return (
-    <AuthProvider>
-      <HelpPageContent />
-    </AuthProvider>
-  )
+  return <HelpPageContent />
 }

@@ -7,7 +7,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { Footer } from '@/components/layout/Footer'
 import { NoteEditor } from '@/components/notes/NoteEditor'
-import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
 import { Note, Course } from '@/types'
 import { BookOpen, FileText, AlertCircle, CheckCircle, Plus, Search, Eye, EyeOff, Edit, Trash2 } from 'lucide-react'
@@ -334,9 +334,5 @@ function NotesPageContent() {
 }
 
 export default function NotesPage() {
-  return (
-    <AuthProvider>
-      <NotesPageContent />
-    </AuthProvider>
-  )
+  return <NotesPageContent />
 }

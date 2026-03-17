@@ -50,10 +50,10 @@ function CourseDetailPageContent() {
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header onCreateCourse={() => {}} />
         
-        <main className="flex-1 flex">
+        <div className="flex-1 flex">
           <Sidebar />
           
-          <main className="flex-1 p-8">
+          <div className="flex-1 p-8">
             <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl shadow-sm border border-gray-200">
               {isLoading || isAuthLoading ? (
                 <>
@@ -76,8 +76,8 @@ function CourseDetailPageContent() {
                 </>
               )}
             </div>
-          </main>
-        </main>
+          </div>
+        </div>
         <Footer />
       </div>
     )
@@ -170,10 +170,10 @@ function CourseDetailPageContent() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header onCreateCourse={() => {}} />
       
-      <main className="flex-1 flex">
+      <div className="flex-1 flex min-w-0">
         <Sidebar />
         
-        <main className="flex-1 p-4 md:p-8 mobile-safe-padding">
+        <main className="flex-1 p-4 md:p-8 mobile-safe-padding min-w-0 overflow-hidden">
 
           {/* Course Header */}
           <div className="mb-8">
@@ -188,53 +188,72 @@ function CourseDetailPageContent() {
               </Button>
             </div>
               
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left space-y-4 sm:space-y-0 sm:space-x-4 w-full">
-                  <div 
-                    className="w-20 h-20 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg border-4 border-white/20"
-                    style={{ backgroundColor: course.color || '#3B82F6' }}
-                  >
-                    {course.code?.substring(0, 2).toUpperCase() || 'CO'}
-                  </div>
-                  <div className="flex-1">
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 leading-tight">{course.name}</h1>
-                    {course.code && (
-                      <p className="text-slate-500 font-bold uppercase tracking-wider text-sm mt-1">{course.code}</p>
-                    )}
-                    {course.description && (
-                      <p className="text-slate-600 mt-2 text-sm line-clamp-2 md:line-clamp-none">{course.description}</p>
-                    )}
-                  </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 md:p-8 relative overflow-hidden group">
+            <div 
+              className="absolute top-0 right-0 w-32 h-32 opacity-[0.03] -translate-y-8 translate-x-8 transition-transform duration-500 group-hover:scale-110"
+              style={{ color: course.color || '#3B82F6' }}
+            >
+              <BookOpen className="w-full h-full" />
+            </div>
+            
+            <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 relative z-10">
+              <motion.div 
+                whileHover={{ scale: 1.05, rotate: 2 }}
+                className="w-20 h-20 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-blue-500/20 flex-shrink-0"
+                style={{ backgroundColor: course.color || '#3B82F6' }}
+              >
+                {course.code?.substring(0, 2).toUpperCase() || 'CO'}
+              </motion.div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
+                  <h1 className="text-2xl md:text-4xl font-black text-slate-900 leading-tight truncate">{course.name}</h1>
+                  {course.code && (
+                    <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px] w-fit mx-auto md:mx-0">
+                      {course.code}
+                    </span>
+                  )}
                 </div>
+                {course.description && (
+                  <p className="text-slate-600 text-sm md:text-base leading-relaxed max-w-2xl mx-auto md:mx-0 italic">
+                    {course.description}
+                  </p>
+                )}
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Tab Navigation */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
-            <div className="flex overflow-x-auto custom-scrollbar border-b border-gray-200 hide-scrollbar scroll-smooth">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-8 overflow-hidden">
+            <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-100 bg-slate-50/30">
               {(['notes', 'examtips', 'assignments'] as TabType[]).map((tab) => {
                 const Icon = getTabIcon(tab)
                 const count = getNotesForTab().length
+                const isActive = activeTab === tab
                 
                 return (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex-none sm:flex-1 flex items-center justify-center space-x-2 px-6 py-4 font-bold transition-all whitespace-nowrap ${
-                      activeTab === tab
-                        ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
-                        : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                    className={`flex-1 flex items-center justify-center space-x-3 px-6 py-5 font-bold transition-all relative whitespace-nowrap overflow-hidden ${
+                      isActive
+                        ? 'text-blue-600 bg-white'
+                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50/50'
                     }`}
                   >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="text-sm">{getTabLabel(tab)}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                      activeTab === tab ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'
+                    <Icon className={`w-5 h-5 flex-shrink-0 transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} />
+                    <span className="text-sm tracking-tight">{getTabLabel(tab)}</span>
+                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-colors ${
+                      isActive ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'
                     }`}>
                       {count}
                     </span>
+                    {isActive && (
+                      <motion.div 
+                        layoutId="activeTab"
+                        className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600"
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
                   </button>
                 )
               })}
@@ -352,7 +371,7 @@ function CourseDetailPageContent() {
             )}
           </div>
         </main>
-      </main>
+      </div>
 
       <Footer />
 

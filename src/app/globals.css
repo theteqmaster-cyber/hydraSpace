@@ -44,6 +44,14 @@ body {
   .mobile-safe-padding {
     padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
   }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 /* Custom Scrollbar for Premium Feel */

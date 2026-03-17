@@ -15,7 +15,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ onCreateCourse }: HeaderProps) => {
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const { user, isLoading } = useAuth()
@@ -29,7 +29,7 @@ export const Header = ({ onCreateCourse }: HeaderProps) => {
 
   const handleNavigation = (path: string) => {
     if (!user) {
-      setIsSearchOpen(true)
+      setIsAuthModalOpen(true)
       return
     }
     window.location.href = path
@@ -98,7 +98,7 @@ export const Header = ({ onCreateCourse }: HeaderProps) => {
                 New Course
               </Button>
             ) : (
-              <Button onClick={() => setIsSearchOpen(true)} variant="primary" size="sm">
+              <Button onClick={() => setIsAuthModalOpen(true)} variant="primary" size="sm" className="shadow-lg shadow-blue-500/20">
                 Sign In
               </Button>
             )}
@@ -162,11 +162,11 @@ export const Header = ({ onCreateCourse }: HeaderProps) => {
       )}
 
       {/* Auth Modal */}
-      {isSearchOpen && !user && (
+      {isAuthModalOpen && !user && (
         <AuthModal
-          isOpen={isSearchOpen}
-          onClose={() => setIsSearchOpen(false)}
-          onAuthSuccess={() => setIsSearchOpen(false)}
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          onAuthSuccess={() => setIsAuthModalOpen(false)}
         />
       )}
     </motion.header>

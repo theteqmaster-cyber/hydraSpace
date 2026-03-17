@@ -93,8 +93,14 @@ export const onAuthStateChange = (callback: (user: AuthUser | null) => void) => 
   return supabase.auth.onAuthStateChange(async (event, session) => {
     console.log('Auth state changed:', event, session?.user?.id)
     if (session?.user) {
-      const profile = await getCurrentUser()
-      console.log('User profile loaded:', profile)
+      // Get user profile directly to avoid redundant getUser() call in getCurrentUser()
+      const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .single()
+      
+      console.log('User profile loaded directly:', profile)
       callback(profile)
     } else {
       console.log('User signed out')
