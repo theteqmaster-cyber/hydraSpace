@@ -172,7 +172,7 @@ function CoursesPageContent() {
                           notesCount={getNotesCount(course.id)}
                           sharedCount={getSharedCount(course.id)}
                           onClick={(course) => {
-                            router.push(`/courses/${course.id}`)
+                            router.push(`/courses/detail?id=${course.id}`)
                           }}
                         />
                         

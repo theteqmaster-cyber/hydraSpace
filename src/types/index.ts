@@ -28,6 +28,8 @@ export interface Note {
   type: 'lecture' | 'assignment' | 'test' | 'concept'
   lecture_number?: number
   is_shared: boolean
+  upvotes?: number
+  upvoted_by?: string[]
   created_at: string
   updated_at: string
 }

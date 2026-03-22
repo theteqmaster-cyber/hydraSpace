@@ -14,9 +14,11 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useData } from '@/contexts/DataContext'
 
 export const Sidebar = () => {
   const pathname = usePathname()
+  const { courses, notes } = useData()
 
   const menuItems = [
     { href: '/', icon: Home, label: 'Dashboard', active: pathname === '/' },
@@ -29,9 +31,9 @@ export const Sidebar = () => {
   ]
 
   const quickStats = [
-    { label: 'Active Courses', value: '3' },
-    { label: 'Total Notes', value: '24' },
-    { label: 'Shared Notes', value: '8' },
+    { label: 'Active Courses', value: (courses || []).filter(c => !c.is_archived).length.toString() },
+    { label: 'Total Notes', value: (notes || []).length.toString() },
+    { label: 'Shared Notes', value: (notes || []).filter(n => n.is_shared).length.toString() },
   ]
 
   return (

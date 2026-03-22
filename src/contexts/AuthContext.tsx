@@ -16,13 +16,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    let mounted = true
+    let isInitialized = false
+
+    const init = async () => {
+      try {
+        const currentUser = await getCurrentUser()
+        if (mounted) {
+          setUser(currentUser)
+          setIsLoading(false)
+          isInitialized = true
+        }
+      } catch (error) {
+        console.error('Failed to hydrate secure session:', error)
+        if (mounted) {
+          setUser(null)
+          setIsLoading(false)
+          isInitialized = true
+        }
+      }
+    }
+
+    // Await background refresh tokens manually
+    init()
+
     const { data: { subscription } } = onAuthStateChange((currentUser) => {
-      console.log('Auth context received user:', currentUser)
-      setUser(currentUser)
-      setIsLoading(false)
+      if (mounted && isInitialized) {
+        console.log('Context handled auth state change')
+        setUser(currentUser)
+      }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const handleSignOut = async () => {

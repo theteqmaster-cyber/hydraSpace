@@ -8,7 +8,6 @@ import { BottomNav } from '@/components/layout/BottomNav'
 import { Footer } from '@/components/layout/Footer'
 import { CourseCard } from '@/components/courses/CourseCard'
 import { CreateCourseModal } from '@/components/courses/CreateCourseModal'
-import { NoteEditor } from '@/components/notes/NoteEditor'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
@@ -43,11 +42,8 @@ interface Note {
 function HomeContent() {
   const router = useRouter()
   const { user, isLoading: isAuthLoading } = useAuth()
-  const { courses, notes, isLoading, refreshData, isOffline, lastSyncTime } = useData()
+  const { courses, notes, timetableEntries, isLoading, refreshData, isOffline, lastSyncTime } = useData()
   const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false)
-  const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false)
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
 
   const handleCreateCourse = () => {
@@ -56,7 +52,7 @@ function HomeContent() {
 
   const handleCourseClick = (course: any) => {
     // Navigate to course detail page instead of opening note editor
-    router.push(`/courses/${course.id}`)
+    router.push(`/courses/detail?id=${course.id}`)
   }
 
   const activeCourses = courses.filter(course => !course.is_archived)
@@ -65,9 +61,18 @@ function HomeContent() {
     return notes.filter(note => note.course_id === courseId).length
   }
 
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  const coursesThisWeek = courses.filter(c => new Date(c.created_at) > oneWeekAgo).length
+  const notesThisWeek = notes.filter(n => new Date(n.created_at) > oneWeekAgo).length
+
   const getSharedCount = (courseId: string) => {
     return notes.filter(note => note.course_id === courseId && note.is_shared).length
   }
+
+  const today = new Date().getDay()
+  const todaysClasses = (timetableEntries || [])
+    .filter((entry: any) => entry.day_of_week === today)
+    .sort((a: any, b: any) => a.start_time.localeCompare(b.start_time))
 
 
   if (!user) {
@@ -285,50 +290,103 @@ function HomeContent() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                className="bg-white rounded-xl shadow-sm border border-slate-200 hover:border-blue-200 transition-colors p-6"
               >
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <div className="w-5 h-5 bg-blue-600 rounded"></div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center font-black text-xl">
+                      📚
+                    </div>
+                    <h3 className="font-bold text-slate-700 uppercase tracking-wider text-xs">Active Courses</h3>
                   </div>
-                  <h3 className="font-semibold text-gray-900">Active Courses</h3>
                 </div>
-                <p className="text-2xl font-bold text-blue-600">{courses.length}</p>
-                <p className="text-sm text-gray-600">this semester</p>
+                <div className="flex items-baseline space-x-3">
+                  <p className="text-4xl font-black text-slate-900 tracking-tighter">{courses.length}</p>
+                  {coursesThisWeek > 0 && (
+                    <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-md flex items-center border border-green-100">
+                      <svg className="w-3 h-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                      {coursesThisWeek} new this week
+                    </span>
+                  )}
+                </div>
               </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                className="bg-white rounded-xl shadow-sm border border-slate-200 hover:border-emerald-200 transition-colors p-6"
               >
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <div className="w-5 h-5 bg-green-600 rounded"></div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center font-black text-xl">
+                      📝
+                    </div>
+                    <h3 className="font-bold text-slate-700 uppercase tracking-wider text-xs">Total Notes</h3>
                   </div>
-                  <h3 className="font-semibold text-gray-900">Total Notes</h3>
                 </div>
-                <p className="text-2xl font-bold text-green-600">{notes.length}</p>
-                <p className="text-sm text-gray-600">created</p>
+                <div className="flex items-baseline space-x-3">
+                  <p className="text-4xl font-black text-slate-900 tracking-tighter">{notes.length}</p>
+                  {notesThisWeek > 0 && (
+                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center border border-emerald-100">
+                      <svg className="w-3 h-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                      {notesThisWeek} new this week
+                    </span>
+                  )}
+                </div>
               </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                onClick={() => router.push('/calendar')}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md hover:border-orange-200 transition-all group relative"
               >
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <div className="w-5 h-5 bg-purple-600 rounded"></div>
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 bg-orange-100/50 rounded-lg flex items-center justify-center group-hover:bg-orange-100 transition-colors">
+                    <span className="text-lg">📅</span>
                   </div>
-                  <h3 className="font-semibold text-gray-900">Shared Notes</h3>
+                  <h3 className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors">Classes Today</h3>
                 </div>
-                <p className="text-2xl font-bold text-purple-600">
-                  {notes.filter(n => n.is_shared).length}
-                </p>
-                <p className="text-sm text-gray-600">with community</p>
+                
+                {todaysClasses.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {todaysClasses.slice(0, 2).map((cls: any, i: number) => {
+                       const course = courses.find(c => c.id === cls.course_id)
+                       return (
+                         <div key={i} className="flex justify-between items-center text-sm border-b border-gray-50 pb-2 last:border-0 last:pb-0">
+                           <span className="font-semibold text-gray-700 truncate pr-2">{course?.code || cls.title}</span>
+                           <span className="text-orange-600 font-bold bg-orange-50 px-2 py-0.5 rounded text-xs shrink-0">{cls.start_time.slice(0, 5)}</span>
+                         </div>
+                       )
+                    })}
+                    {todaysClasses.length > 2 ? (
+                      <div className="text-xs text-gray-400 font-medium pt-1">
+                        +{todaysClasses.length - 2} more today
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-400 font-medium pt-1">
+                        No more classes today
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mt-2 text-left">
+                    <p className="text-2xl font-black text-gray-300">Free Day</p>
+                    <p className="text-sm text-gray-400 mt-1 font-medium">Ready to hit the network?</p>
+                  </div>
+                )}
+                
+                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity text-orange-500">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
               </motion.div>
             </div>
 

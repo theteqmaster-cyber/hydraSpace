@@ -24,7 +24,7 @@ export const getEvents = async (userId: string): Promise<CalendarEvent[]> => {
 }
 
 export const createEvent = async (event: Omit<CalendarEvent, 'id' | 'user_id' | 'created_at' | 'updated_at'>, userId: string): Promise<CalendarEvent> => {
-  const { data, error } = await supabase
+  const insertPromise = supabase
     .from('calendar_events')
     .insert({
       ...event,
@@ -32,6 +32,12 @@ export const createEvent = async (event: Omit<CalendarEvent, 'id' | 'user_id' | 
     })
     .select()
     .single()
+
+  const timeoutPromise = new Promise<{data: any, error: any}>((_, reject) => 
+    setTimeout(() => reject(new Error('Database request timed out')), 8000)
+  )
+
+  const { data, error } = await Promise.race([insertPromise, timeoutPromise])
 
   if (error) throw error
   return data

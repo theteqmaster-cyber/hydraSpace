@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">hydraspace</string>
+    <string name="title_activity_main">hydraspace</string>
+    <string name="package_name">com.theteqmaster.hydraspace</string>
+    <string name="custom_url_scheme">com.theteqmaster.hydraspace</string>
+</resources>

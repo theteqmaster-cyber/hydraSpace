@@ -1,64 +1,36 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { Footer } from '@/components/layout/Footer'
-import { NoteEditor } from '@/components/notes/NoteEditor'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
-import { Note, Course } from '@/types'
+import { Note } from '@/types'
 import { BookOpen, FileText, AlertCircle, CheckCircle, Plus, Search, Eye, EyeOff, Edit, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 
 function NotesPageContent() {
-  const { notes, courses, isLoading, refreshData, deleteNote: deleteNoteLocally, updateNote: updateNoteLocally } = useData()
-  const [isEditorOpen, setIsEditorOpen] = useState(false)
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null)
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
+  const { notes, courses, isLoading, deleteNote: deleteNoteLocally, updateNote: updateNoteLocally } = useData()
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCourse, setFilterCourse] = useState('')
   const { user, isLoading: isAuthLoading } = useAuth()
+  const router = useRouter()
 
   const handleCreateNote = () => {
-    setSelectedNote(null)
-    setSelectedCourse(courses[0] || null)
-    setIsEditorOpen(true)
+    const defaultCourseId = filterCourse || courses[0]?.id
+    if (defaultCourseId) {
+      router.push(`/notes/new?courseId=${defaultCourseId}`)
+    }
   }
 
   const handleEditNote = (note: Note) => {
-    setSelectedNote(note)
-    setSelectedCourse(courses.find(c => c.id === note.course_id) || null)
-    setIsEditorOpen(true)
-  }
-
-  const handleSaveNote = async (noteData: Partial<Note>) => {
-    try {
-      if (noteData.id) {
-        // Update existing note
-        const { updateNote } = await import('@/lib/notes')
-        const updated = await updateNote(noteData.id, noteData)
-        updateNoteLocally(noteData.id, updated)
-      } else {
-        // Create new note
-        const { createNote } = await import('@/lib/notes')
-        await createNote({
-          ...noteData,
-          user_id: user!.id,
-          course_id: selectedCourse!.id
-        } as Omit<Note, 'id' | 'created_at' | 'updated_at'>)
-        // Refresh to get the new note with all metadata
-        await refreshData()
-      }
-      
-      setIsEditorOpen(false)
-    } catch (error) {
-      console.error('Error saving note:', error)
-    }
+    router.push(`/notes/edit?id=${note.id}`)
   }
 
   const handleDeleteNote = async (noteId: string) => {
@@ -101,6 +73,14 @@ function NotesPageContent() {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  const stripMarkdown = (markdown: string) => {
+    if (!markdown) return ''
+    return markdown
+      .replace(/[#_*\[\]`]/g, '') // remove markdown char formatting
+      .replace(/\n+/g, ' ') // replace newlines with spaces
+      .trim()
   }
 
   const enrichedNotes = notes.map(note => {
@@ -245,7 +225,8 @@ function NotesPageContent() {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                          className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer flex flex-col"
+                          onClick={() => handleEditNote(note)}
                         >
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center space-x-2">
@@ -261,20 +242,20 @@ function NotesPageContent() {
                             {note.title}
                           </h3>
 
-                          <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                            {note.content}
+                          <p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-1 break-words">
+                            {stripMarkdown(note.content)}
                           </p>
 
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="text-xs text-gray-500">
-                              {(note as any).course_code} - {(note as any).course_name}
+                          <div className="flex items-center justify-between mb-4 pt-4 border-t border-slate-50 mt-auto">
+                            <div className="text-xs text-gray-500 font-medium bg-slate-100 px-2 py-1 rounded-md">
+                              {(note as any).course_code}
                             </div>
                             <div className="text-xs text-gray-500">
                               {formatDate(note.created_at)}
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50" onClick={e => e.stopPropagation()}>
                             <div className="flex space-x-2">
                               <Button
                                 variant="ghost"
@@ -312,22 +293,6 @@ function NotesPageContent() {
       </main>
 
       <Footer />
-
-      {isEditorOpen && selectedCourse && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <NoteEditor
-              isOpen={isEditorOpen}
-              note={selectedNote || undefined}
-              course={selectedCourse}
-              courses={courses}
-              courseId={selectedCourse.id}
-              onSave={handleSaveNote}
-              onCancel={() => setIsEditorOpen(false)}
-            />
-          </div>
-        </div>
-      )}
       <BottomNav />
     </div>
   )

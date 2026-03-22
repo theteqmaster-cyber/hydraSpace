@@ -1,9 +1,11 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Calendar, User, BookOpen, FileText, AlertCircle, CheckCircle, Share2, Flag } from 'lucide-react'
+import { useState } from 'react'
+import { X, Calendar, User, BookOpen, FileText, AlertCircle, CheckCircle, Share2, Flag, ThumbsUp } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Note } from '@/types'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface CommunityNotePreviewProps {
   note: Note & { users?: { name: string }; courses?: { name: string; code: string } }
@@ -11,7 +13,29 @@ interface CommunityNotePreviewProps {
   onClose: () => void
 }
 
-export const CommunityNotePreview = ({ note, isOpen, onClose }: CommunityNotePreviewProps) => {
+export const CommunityNotePreview = ({ note: initialNote, isOpen, onClose }: CommunityNotePreviewProps) => {
+  const { user } = useAuth()
+  const [note, setNote] = useState(initialNote)
+  
+  const handleUpvote = async () => {
+    if (!user) return
+    
+    const isUpvoted = note.upvoted_by?.includes(user.id)
+    const newUpvotes = isUpvoted ? Math.max(0, (note.upvotes || 0) - 1) : (note.upvotes || 0) + 1
+    const newUpvotedBy = isUpvoted 
+      ? (note.upvoted_by || []).filter((id: string) => id !== user.id)
+      : [...(note.upvoted_by || []), user.id]
+
+    // Optimistic
+    setNote({ ...note, upvotes: newUpvotes, upvoted_by: newUpvotedBy })
+
+    try {
+      const { toggleUpvote } = await import('@/lib/notes')
+      await toggleUpvote(note.id, user.id)
+    } catch (e) {
+      console.error(e)
+    }
+  }
   const getNoteIcon = (type: string) => {
     switch (type) {
       case 'lecture': return BookOpen
@@ -137,19 +161,27 @@ export const CommunityNotePreview = ({ note, isOpen, onClose }: CommunityNotePre
             </div>
 
             {/* Modal Footer Actions */}
-            <div className="p-6 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
-              <div className="flex space-x-3">
-                <Button variant="outline" size="sm" className="bg-white">
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share Link
+            <div className="p-6 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row gap-4 items-center justify-between">
+              <div className="flex space-x-3 w-full sm:w-auto">
+                <Button 
+                  onClick={handleUpvote}
+                  variant="outline" 
+                  size="sm" 
+                  className={`bg-white font-bold tracking-wide transition-all ${note.upvoted_by?.includes(user?.id || '') ? 'text-orange-600 border-orange-200 bg-orange-50' : 'text-gray-600'}`}
+                >
+                  <ThumbsUp className={`w-4 h-4 mr-2 ${note.upvoted_by?.includes(user?.id || '') ? 'fill-orange-500' : ''}`} />
+                  {note.upvotes || 0} Upvotes
                 </Button>
-                <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50">
-                  <Flag className="w-4 h-4 mr-2" />
-                  Report
+                <Button variant="outline" size="sm" className="bg-white text-gray-600">
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share
                 </Button>
               </div>
-              <div className="text-sm text-gray-400 italic">
-                View only mode • Community shared
+              <div className="flex items-center space-x-3 text-sm text-gray-400 italic">
+                <span>View only mode • Community shared</span>
+                <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 h-auto">
+                  <Flag className="w-4 h-4" />
+                </Button>
               </div>
             </div>
           </motion.div>

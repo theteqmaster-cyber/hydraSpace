@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
@@ -9,7 +9,7 @@ import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
 import { Note } from '@/types'
-import { Search, BookOpen, FileText, AlertCircle, CheckCircle, User, Calendar } from 'lucide-react'
+import { Search, BookOpen, FileText, AlertCircle, CheckCircle, User, Calendar, ThumbsUp, TrendingUp, Clock, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 
@@ -23,8 +23,42 @@ function CommunityPageContent() {
   const [selectedNote, setSelectedNote] = useState<any | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   
+  // Pagination & Display State
+  const [notes, setNotes] = useState<any[]>([])
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
+  const [sortBy, setSortBy] = useState<'trending' | 'newest'>('trending')
+  const [isLoadingFeed, setIsLoadingFeed] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const LIMIT = 12
+  
   const { user, isLoading: isAuthLoading } = useAuth()
-  const { sharedNotes, isLoading } = useData()
+  const { sharedNotes } = useData() // Only used for global stats now
+
+  useEffect(() => {
+    fetchNotes(0, true)
+  }, [sortBy])
+
+  const fetchNotes = async (pageNum: number, isRefresh = false) => {
+    if (isRefresh) setIsLoadingFeed(true)
+    else setIsLoadingMore(true)
+    
+    try {
+      const { getSharedNotes } = await import('@/lib/notes')
+      const newNotes = await getSharedNotes(LIMIT, pageNum * LIMIT, sortBy)
+      
+      if (newNotes.length < LIMIT) setHasMore(false)
+      else setHasMore(true)
+
+      setNotes(prev => isRefresh ? newNotes : [...prev, ...newNotes])
+      setPage(pageNum)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsLoadingFeed(false)
+      setIsLoadingMore(false)
+    }
+  }
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -35,7 +69,7 @@ function CommunityPageContent() {
     setIsSearching(true)
     try {
       const { searchNotes } = await import('@/lib/notes')
-      const results = await searchNotes(searchQuery, user?.id)
+      const results = await searchNotes(searchQuery, user?.id, sortBy)
       setSearchResults(results)
     } catch (error) {
       console.error('Error searching notes:', error)
@@ -44,7 +78,31 @@ function CommunityPageContent() {
     }
   }
 
-  const displayNotes = searchQuery ? searchResults : sharedNotes
+  const handleUpvote = async (e: React.MouseEvent, noteId: string, currentUpvotes: number, upvotedBy: string[]) => {
+    e.stopPropagation()
+    if (!user) return
+    
+    // Optimistic UI update
+    const isUpvoted = upvotedBy.includes(user.id)
+    const newUpvotes = isUpvoted ? Math.max(0, currentUpvotes - 1) : currentUpvotes + 1
+    const newUpvotedBy = isUpvoted 
+      ? upvotedBy.filter((id) => id !== user.id)
+      : [...upvotedBy, user.id]
+
+    setNotes(prev => prev.map(n => n.id === noteId ? { ...n, upvotes: newUpvotes, upvoted_by: newUpvotedBy } : n))
+    if (searchQuery) {
+      setSearchResults(prev => prev.map(n => n.id === noteId ? { ...n, upvotes: newUpvotes, upvoted_by: newUpvotedBy } : n))
+    }
+
+    try {
+      const { toggleUpvote } = await import('@/lib/notes')
+      await toggleUpvote(noteId, user.id)
+    } catch (e) {
+       console.error(e)
+    }
+  }
+
+  const displayNotes = searchQuery ? searchResults : notes
 
   const getNoteIcon = (type: string) => {
     switch (type) {
@@ -113,7 +171,7 @@ function CommunityPageContent() {
                   <span>Community Network</span>
                 </motion.div>
                 <h1 className="text-fluid-h1 text-gray-900">
-                  Academic <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Library</span>
+                  Student <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Network</span>
                 </h1>
                 <p className="text-gray-500 mt-4 text-base md:text-lg max-w-xl leading-relaxed">
                   Discover, share, and expand your knowledge with curated notes from fellow high-achieving students.
@@ -137,36 +195,49 @@ function CommunityPageContent() {
             </div>
 
             {/* Premium Search Experience */}
-            <div className="bg-white p-2 rounded-2xl shadow-xl shadow-blue-500/5 border border-gray-100 mb-12 relative overflow-hidden group">
+            <div className="bg-white p-2 text-sm rounded-2xl shadow-xl shadow-blue-500/5 border border-gray-100 mb-8 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/3 group-hover:bg-indigo-50 transition-colors duration-500"></div>
-              <div className="flex flex-col sm:flex-row gap-2 relative z-10">
+              <div className="flex flex-col md:flex-row gap-2 relative z-10">
                 <div className="flex-1 relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <Input
-                    placeholder="Search by topic, course code, or content..."
+                    placeholder="Search by topic, course code..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                     className="pl-12 h-14 bg-transparent border-none focus:ring-0 text-lg placeholder:text-gray-300"
                   />
                 </div>
-                <Button 
-                  onClick={handleSearch} 
-                  disabled={isLoading || isSearching}
-                  size="lg"
-                  className="h-14 px-8 rounded-xl shadow-lg shadow-blue-600/20"
-                >
-                  {isSearching ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      <span>Discovery...</span>
-                    </div>
-                  ) : 'Search Library'}
-                </Button>
+                <div className="flex gap-2 p-1 border-t md:border-t-0 md:border-l border-gray-100">
+                  <div className="flex bg-gray-50 rounded-xl p-1 shrink-0">
+                    <button 
+                      onClick={() => setSortBy('trending')}
+                      className={`px-4 py-2 text-sm font-bold flex items-center rounded-lg transition-all ${sortBy === 'trending' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      <TrendingUp className="w-4 h-4 mr-1.5" />
+                      Trending
+                    </button>
+                    <button 
+                      onClick={() => setSortBy('newest')}
+                      className={`px-4 py-2 text-sm font-bold flex items-center rounded-lg transition-all ${sortBy === 'newest' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      <Clock className="w-4 h-4 mr-1.5" />
+                      Newest
+                    </button>
+                  </div>
+                  <Button 
+                    onClick={handleSearch} 
+                    disabled={isSearching}
+                    size="lg"
+                    className="h-auto md:h-12 px-6 rounded-xl shadow-lg shadow-blue-600/20 md:ml-2"
+                  >
+                    {isSearching ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Search'}
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {(isLoading || isSearching) ? (
+            {(isLoadingFeed || isSearching) && notes.length === 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {[1, 2, 3, 4, 5, 6].map(i => (
                   <div key={i} className="h-64 bg-white rounded-2xl animate-pulse border border-gray-100 p-6">
@@ -197,7 +268,7 @@ function CommunityPageContent() {
                     <p className="text-gray-500 mb-8 max-w-md mx-auto italic">
                       {searchQuery 
                         ? "We couldn't find any notes matching your search. Try a different keyword or course code." 
-                        : "The library is looking a bit empty. Share your high-quality academic notes to help the community grow!"}
+                        : "The network is looking a bit empty. Share your high-quality academic notes to help the community grow!"}
                     </p>
                     {user && !searchQuery && (
                        <Button variant="outline" className="rounded-xl px-8 h-12">
@@ -242,17 +313,28 @@ function CommunityPageContent() {
                             {note.content}
                           </p>
 
-                          <div className="flex items-center justify-between text-xs text-gray-400 mt-auto pt-6 border-t border-gray-50">
+                          <div className="flex items-center justify-between mt-auto pt-6 border-t border-gray-50">
                             <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-500">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-500 shrink-0">
                                 {note.users?.name?.substring(0, 2).toUpperCase() || 'AN'}
                               </div>
-                              <span className="font-semibold text-gray-600">{note.users?.name || 'Anonymous'}</span>
+                              <div>
+                                <div className="text-xs font-semibold text-gray-600 line-clamp-1">{note.users?.name || 'Anonymous'}</div>
+                                <div className="text-[10px] text-gray-400 font-medium">{formatDate(note.created_at)}</div>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-1 font-medium bg-gray-50 px-2 py-1 rounded">
-                              <Calendar className="w-3 h-3" />
-                              <span>{formatDate(note.created_at)}</span>
-                            </div>
+                            
+                            <button 
+                              onClick={(e) => handleUpvote(e, note.id, note.upvotes || 0, note.upvoted_by || [])}
+                              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border transition-all shrink-0 z-10 ${
+                                note.upvoted_by?.includes(user.id) 
+                                ? 'bg-orange-50 border-orange-200 text-orange-600' 
+                                : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100'
+                              }`}
+                            >
+                              <ThumbsUp className={`w-3.5 h-3.5 ${note.upvoted_by?.includes(user.id) ? 'fill-orange-500' : ''}`} />
+                              <span className="text-xs font-bold">{note.upvotes || 0}</span>
+                            </button>
                           </div>
 
                           {note.courses && (
@@ -270,11 +352,41 @@ function CommunityPageContent() {
                     })}
                   </div>
                 )}
-              </>
-            )}
-          </motion.div>
+                  
+                  {/* Pagination Actions */}
+                  {!searchQuery && hasMore && (
+                    <div className="mt-12 flex justify-center">
+                      <Button
+                        variant="outline"
+                        onClick={() => fetchNotes(page + 1)}
+                        disabled={isLoadingMore}
+                        className="rounded-xl px-8 h-12 bg-white border border-gray-200 shadow-sm hover:bg-gray-50 text-gray-700 font-bold"
+                      >
+                        {isLoadingMore ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                            <span>Loading more...</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <span>Load More</span>
+                            <ChevronDown className="w-4 h-4" />
+                          </div>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {!searchQuery && !hasMore && displayNotes.length > 0 && (
+                    <div className="mt-12 text-center text-sm font-medium text-gray-400">
+                      You've reached the end of the network.
+                    </div>
+                  )}
+                </>
+              )}
+            </motion.div>
+          </main>
         </main>
-      </main>
 
       <Footer />
 

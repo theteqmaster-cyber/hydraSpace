@@ -19,11 +19,17 @@ export const EventEditor = ({
   onSave, 
   onCancel 
 }: EventEditorProps) => {
+  const getLocalDateStr = (d: Date) => {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+
   const [formData, setFormData] = useState({
     title: event?.title || '',
     description: event?.description || '',
-    date: event?.start_time ? new Date(event.start_time).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-    time: event?.start_time ? new Date(event.start_time).toTimeString().split(' ')[0].substring(0, 5) : '09:00',
+    date: event?.start_time ? getLocalDateStr(new Date(event.start_time)) : getLocalDateStr(new Date()),
+    time: event?.start_time 
+      ? `${String(new Date(event.start_time).getHours()).padStart(2, '0')}:${String(new Date(event.start_time).getMinutes()).padStart(2, '0')}` 
+      : '09:00',
     type: event?.type || 'other' as const,
     course_id: event?.course_id || ''
   })
@@ -50,9 +56,11 @@ export const EventEditor = ({
     setSaveStatus('saving')
 
     try {
-      const start_time = `${formData.date}T${formData.time}:00Z`
-      // For simplicity, make end_time 1 hour after start_time if not specified
-      const endDate = new Date(start_time)
+      // Treat the input safely as local time by natively passing it to the interpreter
+      const startLocal = new Date(`${formData.date}T${formData.time}:00`)
+      const start_time = startLocal.toISOString()
+      
+      const endDate = new Date(startLocal)
       endDate.setHours(endDate.getHours() + 1)
       const end_time = endDate.toISOString()
 

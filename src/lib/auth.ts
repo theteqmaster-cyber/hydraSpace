@@ -91,7 +91,11 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
 
 export const onAuthStateChange = (callback: (user: AuthUser | null) => void) => {
   return supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log('Auth state changed:', event, session?.user?.id)
+    console.log('Auth network state event:', event)
+    
+    // Ignore initial cache hits since AuthContext resolves them natively
+    if (event === 'INITIAL_SESSION') return
+
     if (session?.user) {
       // Get user profile directly to avoid redundant getUser() call in getCurrentUser()
       const { data: profile } = await supabase

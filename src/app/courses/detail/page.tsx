@@ -1,15 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { motion } from 'framer-motion'
-import { useParams, useRouter } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Footer } from '@/components/layout/Footer'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
-import { CourseNoteEditor } from '@/components/notes/CourseNoteEditor'
 import { 
   BookOpen, 
   FileText, 
@@ -26,16 +25,14 @@ import { Course, Note } from '@/types'
 type TabType = 'notes' | 'examtips' | 'assignments'
 
 function CourseDetailPageContent() {
-  const params = useParams()
+  const searchParams = useSearchParams()
   const router = useRouter()
   const { user, isLoading: isAuthLoading } = useAuth()
   const { courses, notes, isLoading, refreshData } = useData()
-  const courseId = params.id as string
+  const courseId = searchParams.get('id') as string
   
   const [course, setCourse] = useState<Course | null>(null)
   const [activeTab, setActiveTab] = useState<TabType>('notes')
-  const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false)
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null)
 
   // Synchronize local course state with the courses array from context
   useEffect(() => {
@@ -103,39 +100,11 @@ function CourseDetailPageContent() {
   }
 
   const handleCreateNote = (type: Note['type']) => {
-    setSelectedNote(null)
-    setActiveTab(type === 'lecture' ? 'notes' : type === 'test' || type === 'concept' ? 'examtips' : 'assignments')
-    setIsNoteEditorOpen(true)
+    router.push(`/notes/new?courseId=${courseId}&type=${type}`)
   }
 
   const handleEditNote = (note: Note) => {
-    setSelectedNote(note)
-    setIsNoteEditorOpen(true)
-  }
-
-  const handleSaveNote = async (noteData: Partial<Note>) => {
-    try {
-      if (selectedNote?.id) {
-        // Update existing note
-        const { updateNote } = await import('@/lib/notes')
-        await updateNote(selectedNote.id, noteData)
-      } else {
-        // Create new note
-        const { createNote } = await import('@/lib/notes')
-        await createNote({
-          ...noteData,
-          user_id: user!.id,
-          course_id: courseId
-        } as Note)
-      }
-      
-      refreshData()
-      setIsNoteEditorOpen(false)
-      setSelectedNote(null)
-    } catch (error) {
-      console.error('Error saving note:', error)
-      throw error
-    }
+    router.push(`/notes/edit?id=${note.id}`)
   }
 
   const formatDate = (dateString: string) => {
@@ -374,24 +343,14 @@ function CourseDetailPageContent() {
       </div>
 
       <Footer />
-
-      {/* Note Editor Modal */}
-      {isNoteEditorOpen && course && (
-        <CourseNoteEditor
-          isOpen={isNoteEditorOpen}
-          note={selectedNote || undefined}
-          course={course}
-          onSave={handleSaveNote}
-          onCancel={() => {
-            setIsNoteEditorOpen(false)
-            setSelectedNote(null)
-          }}
-        />
-      )}
     </div>
   )
 }
 
 export default function CourseDetailPage() {
-  return <CourseDetailPageContent />
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+      <CourseDetailPageContent />
+    </Suspense>
+  )
 }
