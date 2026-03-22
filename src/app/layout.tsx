@@ -10,6 +10,7 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'HydraSpace - Your Digital Academic Workspace',
   description: 'Organize, collaborate, and excel with HydraSpace - the ultimate note-taking platform for university students.',
+  manifest: '/manifest.json',
   applicationName: 'HydraSpace',
   appleWebApp: {
     capable: true,
