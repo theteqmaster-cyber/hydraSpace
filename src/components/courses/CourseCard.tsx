@@ -21,7 +21,7 @@ export const CourseCard = ({
     <motion.div
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
-      className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all cursor-pointer"
+      className="bg-white rounded-xl shadow-sm border border-slate-200 hover:border-blue-200 transition-colors p-6"
       onClick={() => onClick?.(course)}
     >
       <div className="flex items-start justify-between mb-4">

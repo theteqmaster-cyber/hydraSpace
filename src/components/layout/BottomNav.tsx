@@ -21,7 +21,7 @@ export const BottomNav = () => {
     { label: 'New Note', icon: FileText, color: 'bg-blue-500', href: '/notes' },
     { label: 'Timetable', icon: Clock, color: 'bg-indigo-500', href: '/timetable' },
     { label: 'Ask AI', icon: MessageSquare, color: 'bg-purple-500', href: '#' },
-    { label: 'View All', icon: List, color: 'bg-slate-500', href: '/notes' },
+    { label: 'Library', icon: Users, color: 'bg-emerald-500', href: '/community' },
   ]
 
   return (

@@ -102,7 +102,7 @@ export const ResearchPanel = ({ initialQuery = '', onInsert, onClose }: Research
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 overflow-hidden relative border-l border-slate-200">
+    <div className="flex flex-col h-full bg-white overflow-hidden relative border-l border-slate-200">
       {/* Header */}
       <div className="p-4 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between">
         <div className="flex items-center space-x-2">
@@ -216,7 +216,7 @@ export const ResearchPanel = ({ initialQuery = '', onInsert, onClose }: Research
       </div>
 
       {/* Input Area */}
-      <div className="p-4 bg-white border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
+      <div className="p-4 bg-white border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.02)] z-20">
         <form onSubmit={handleSubmit} className="relative flex items-center">
           <input 
             ref={inputRef}
