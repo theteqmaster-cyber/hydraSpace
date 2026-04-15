@@ -4,12 +4,14 @@ import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Eye, EyeOff, FileText, BookOpen, AlertCircle, 
-  CheckCircle, Bold, Italic, Heading, List, Code, Quote, RefreshCw, ArrowLeft, Cloud, CloudOff, CloudLightning, Search
+  CheckCircle, Bold, Italic, Heading, List, Code, Quote, RefreshCw, ArrowLeft, Cloud, CloudOff, CloudLightning, Search, Sigma
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Note, Course } from '@/types'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
 import { ResearchPanel } from './ResearchPanel'
 
 interface NoteEditorProps {
@@ -317,6 +319,9 @@ export const NoteEditorComponent = ({
           <button onClick={() => insertMarkdown('> ')} className="p-1.5 rounded text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors" title="Quote">
             <Quote className="w-4 h-4" />
           </button>
+          <button onClick={() => insertMarkdown('$$ \n', '\n $$')} className="p-1.5 rounded text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors" title="Equation">
+            <Sigma className="w-4 h-4" />
+          </button>
 
           <div className="w-px h-4 bg-slate-300 mx-2" />
           <button 
@@ -356,7 +361,9 @@ export const NoteEditorComponent = ({
         {/* Mobile View Toggle */}
         <div className="flex md:hidden bg-slate-200 p-0.5 rounded-md min-w-max ml-2">
           <button onClick={() => setViewMode('write')} className={`px-3 py-1 text-[10px] font-bold rounded uppercase ${viewMode === 'write' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>Write</button>
-          <button onClick={() => setViewMode('preview')} className={`px-3 py-1 text-[10px] font-bold rounded uppercase ${viewMode === 'preview' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>Preview</button>
+          <button onClick={() => setViewMode('preview')} className={`px-3 py-1 text-[10px] font-bold rounded uppercase ${viewMode === 'preview' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>
+            {rightPaneMode === 'research' ? 'Research' : 'Preview'}
+          </button>
         </div>
       </div>
 
@@ -400,7 +407,10 @@ export const NoteEditorComponent = ({
               <div className="flex-1 overflow-y-auto custom-scrollbar relative">
                 {debouncedContent ? (
                   <div className="prose prose-sm md:prose-base prose-slate max-w-none p-6 md:p-10 w-full mx-auto">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                    >
                       {debouncedContent}
                     </ReactMarkdown>
                   </div>
@@ -419,6 +429,7 @@ export const NoteEditorComponent = ({
                   <ResearchPanel 
                     initialQuery={researchQuery} 
                     onInsert={handleInsertFromResearch} 
+                    onClose={() => setViewMode('write')}
                   />
                 </div>
               </div>

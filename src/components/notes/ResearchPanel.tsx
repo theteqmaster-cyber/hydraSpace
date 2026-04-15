@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Send, Loader2, Sparkles, AlertCircle, ArrowRightCircle, X, User, Bot, Quote } from 'lucide-react'
+import { Send, Loader2, Sparkles, AlertCircle, ArrowRightCircle, X, User, Bot, Quote, ChevronLeft, Copy, Check } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getGeminiResponse } from '@/lib/gemini'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
 
 interface Message {
   role: 'user' | 'model'
@@ -17,9 +19,10 @@ interface Message {
 interface ResearchPanelProps {
   initialQuery?: string
   onInsert?: (text: string) => void
+  onClose?: () => void
 }
 
-export const ResearchPanel = ({ initialQuery = '', onInsert }: ResearchPanelProps) => {
+export const ResearchPanel = ({ initialQuery = '', onInsert, onClose }: ResearchPanelProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'model',
@@ -31,6 +34,7 @@ export const ResearchPanel = ({ initialQuery = '', onInsert }: ResearchPanelProp
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [copiedId, setCopiedId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -86,6 +90,12 @@ export const ResearchPanel = ({ initialQuery = '', onInsert }: ResearchPanelProp
     }
   }
 
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     handleSend(input)
@@ -96,6 +106,15 @@ export const ResearchPanel = ({ initialQuery = '', onInsert }: ResearchPanelProp
       {/* Header */}
       <div className="p-4 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between">
         <div className="flex items-center space-x-2">
+          {onClose && (
+            <button 
+              onClick={onClose}
+              className="md:hidden p-1 mr-1 text-slate-400 hover:text-slate-900 transition-colors"
+              title="Back to Editor"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          )}
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
@@ -136,7 +155,10 @@ export const ResearchPanel = ({ initialQuery = '', onInsert }: ResearchPanelProp
                 }`}
               >
                 <div className={`prose prose-sm max-w-none ${message.role === 'user' ? 'prose-invert' : 'prose-slate'}`}>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                  >
                     {message.content}
                   </ReactMarkdown>
                 </div>
@@ -148,6 +170,15 @@ export const ResearchPanel = ({ initialQuery = '', onInsert }: ResearchPanelProp
                   animate={{ opacity: 1 }}
                   className="mt-2 flex space-x-2"
                 >
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleCopy(message.content, message.id)}
+                    className="h-8 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-blue-600 hover:bg-blue-50 bg-white border border-slate-200 rounded-full"
+                  >
+                    {copiedId === message.id ? <Check className="w-3 h-3 mr-1.5" /> : <Copy className="w-3 h-3 mr-1.5" />}
+                    {copiedId === message.id ? 'Copied' : 'Copy'}
+                  </Button>
                   <Button
                     variant="secondary"
                     size="sm"
