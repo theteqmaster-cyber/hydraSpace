@@ -77,7 +77,7 @@ function EditNotePageContent() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <h2 className="text-xl font-bold mb-2">Note Not Found</h2>
-          <p className="text-slate-600 mb-6">The note you are trying to edit does not exist or you don't have permission to view it.</p>
+          <p className="text-slate-600 mb-6">The note you are trying to edit does not exist or you don&apos;t have permission to view it.</p>
           <Button onClick={() => router.push('/notes')}>Back to Notes</Button>
         </div>
       </div>
@@ -87,7 +87,7 @@ function EditNotePageContent() {
   const course = courses.find(c => c.id === note.course_id)
 
   return (
-    <div className="h-screen bg-white flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: '#f9f6e5' }}>
       {/* Editor Area */}
       <main className="flex-1 flex flex-col p-0 w-full relative">
         <NoteEditor

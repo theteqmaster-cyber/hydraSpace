@@ -31,16 +31,11 @@ function CourseDetailPageContent() {
   const { courses, notes, isLoading, refreshData } = useData()
   const courseId = searchParams.get('id') as string
   
-  const [course, setCourse] = useState<Course | null>(null)
   const [activeTab, setActiveTab] = useState<TabType>('notes')
+  
+  // Derived state: Get the course directly from the context based on URL param
+  const course = courses.find(c => c.id === courseId) || null
 
-  // Synchronize local course state with the courses array from context
-  useEffect(() => {
-    if (courses.length > 0) {
-      const foundCourse = courses.find(c => c.id === courseId)
-      setCourse(foundCourse || null)
-    }
-  }, [courseId, courses])
 
   if (!course) {
     return (
@@ -64,7 +59,7 @@ function CourseDetailPageContent() {
                   </div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">Course Not Found</h2>
                   <p className="text-gray-600 mb-8 max-w-sm text-center">
-                    We couldn't find the course you're looking for. It may have been deleted or the link might be incorrect.
+                    We couldn&apos;t find the course you&apos;re looking for. It may have been deleted or the link might be incorrect.
                   </p>
                   <Button onClick={() => router.push('/courses')}>
                     <ArrowLeft className="w-4 h-4 mr-2" />

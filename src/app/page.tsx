@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
@@ -14,6 +14,95 @@ import { useData } from '@/contexts/DataContext'
 import { useRouter } from 'next/navigation'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { AuthModal } from '@/components/auth/AuthModal'
+import { Layout, LucideIcon, BookOpen, Clock, Users, Zap, ArrowRight, Share2, Sparkles, GraduationCap } from 'lucide-react'
+import { useSpring, useMotionValue } from 'framer-motion'
+
+// --- PREMIUM BACKGROUND AURA COMPONENT ---
+const BackgroundAura = ({ mouseX, mouseY }: { mouseX: any, mouseY: any }) => {
+  return (
+    <div className="absolute inset-0 overflow-hidden -z-10 bg-white">
+      {/* Interactive Spotlight Aura */}
+      <motion.div
+        style={{
+          x: mouseX,
+          y: mouseY,
+        }}
+        className="absolute top-0 left-0 w-[800px] h-[800px] -translate-x-1/2 -translate-y-1/2 bg-blue-400/10 rounded-full blur-[160px] pointer-events-none opacity-0 md:opacity-100"
+      />
+      
+      <motion.div
+        animate={{
+          scale: [1, 1.2, 1],
+          x: [0, 50, 0],
+          y: [0, 30, 0],
+        }}
+        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        className="absolute -top-[10%] -right-[10%] w-[600px] h-[600px] bg-blue-100/40 rounded-full blur-[120px]"
+      />
+      <motion.div
+        animate={{
+          scale: [1, 1.3, 1],
+          x: [0, -40, 0],
+          y: [0, 60, 0],
+        }}
+        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+        className="absolute bottom-[20%] -left-[10%] w-[500px] h-[500px] bg-indigo-100/40 rounded-full blur-[100px]"
+      />
+      
+      {/* Architectural Grid Overlay */}
+      <div className="absolute inset-0 w-full h-full opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #2563eb 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+    </div>
+  )
+}
+
+// --- SERENE SNOWFALL COMPONENT ---
+const STATIC_FLAKES = Array.from({ length: 40 }).map((_, i) => ({
+  id: i,
+  initialX: `${Math.random() * 100}%`,
+  sway: [0, Math.random() * 40 - 20],
+  duration: 10 + Math.random() * 20,
+  delay: Math.random() * 20
+}))
+
+const Snowfall = () => {
+  const [mounted, setMounted] = useState(false)
+  
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-20">
+      {STATIC_FLAKES.map((flake) => (
+        <motion.div
+          key={flake.id}
+          initial={{ 
+            y: -20, 
+            opacity: 0 
+          }}
+          animate={{ 
+            y: "110vh",
+            x: flake.sway,
+            opacity: [0, 0.7, 0.7, 0],
+          }}
+          transition={{ 
+            duration: flake.duration, 
+            repeat: Infinity, 
+            ease: "linear",
+            delay: flake.delay 
+          }}
+          style={{
+            left: flake.initialX,
+          }}
+          className="absolute w-[5px] h-[5px] bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] rounded-full blur-[0.5px]"
+        />
+      ))}
+    </div>
+  )
+}
 
 interface Course {
   id: string
@@ -46,6 +135,19 @@ function HomeContent() {
   const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
 
+  // -- INTERACTIVE MOUSE TRACKING --
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+  const smoothX = useSpring(mouseX, { damping: 50, stiffness: 400 })
+  const smoothY = useSpring(mouseY, { damping: 50, stiffness: 400 })
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const { clientX, clientY } = e
+    mouseX.set(clientX)
+    mouseY.set(clientY)
+  }
+
+  // --- REST OF LOGIC ---
   const handleCreateCourse = () => {
     setIsCreateCourseModalOpen(true)
   }
@@ -77,148 +179,141 @@ function HomeContent() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
+      <div 
+        className="min-h-screen flex flex-col relative selection:bg-blue-100 selection:text-blue-700 overflow-x-hidden"
+        onMouseMove={handleMouseMove}
+      >
+        <BackgroundAura mouseX={smoothX} mouseY={smoothY} />
+        <Snowfall />
         <Header onCreateCourse={() => {}} />
         
-        {/* Modern Hero Section */}
-        <section className="relative pt-20 pb-24 lg:pt-32 lg:pb-32 overflow-hidden bg-white">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl">
-            <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-50 rounded-full blur-3xl opacity-50 animate-pulse"></div>
-            <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-50 rounded-full blur-3xl opacity-50"></div>
-          </div>
-
+        {/* Elite Hero Section */}
+        <section className="relative pt-24 pb-20 lg:pt-36 lg:pb-32 overflow-visible">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="text-center">
+            <div className="flex flex-col items-center text-center">
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-sm font-bold tracking-wide uppercase mb-8"
+                initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-slate-900 text-white text-[10px] font-black tracking-[0.2em] uppercase mb-10 shadow-lg"
               >
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                </span>
-                <span>By Students, For Students</span>
+                <Sparkles className="w-3 h-3 text-blue-400" />
+                <span>The Academic Operating System</span>
               </motion.div>
 
               <motion.h1 
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-6xl lg:text-8xl font-black text-slate-900 leading-tight tracking-tighter mb-8"
+                transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                className="text-4xl md:text-6xl lg:text-8xl font-black text-slate-900 leading-[1] tracking-tighter mb-10"
               >
-                The Digital Notebook <br />
-                That Helps You <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Win</span>.
+                Master Your Degree.<br />
+                <span className="text-blue-600 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Zero Stress.</span>
               </motion.h1>
 
               <motion.p 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-xl text-slate-600 mb-12 max-w-2xl mx-auto leading-relaxed"
+                transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                className="text-lg md:text-xl text-slate-500 mb-12 max-w-2xl mx-auto leading-relaxed md:font-medium"
               >
-                Stop drowning in loose papers and fragmented files. HydraSpace is the all-in-one OS for your academic life. Notes, classes, and collaboration — solved.
+                Fragmented notes and lost lecture slides are a thing of the past. 
+                HydraSpace is the all-in-one ecosystem where students win, build, and share.
               </motion.p>
 
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
               >
                 <Button 
                   size="lg" 
                   onClick={() => setIsAuthModalOpen(true)}
-                  className="h-16 px-10 rounded-2xl text-lg font-bold shadow-2xl shadow-blue-600/30 group"
+                  className="h-16 px-10 rounded-2xl text-lg font-black shadow-2xl shadow-blue-600/30 group bg-slate-900 hover:bg-black transition-all"
                 >
-                  Enter HydraSpace
-                  <span className="ml-2 group-hover:translate-x-1 transition-transform">🚀</span>
+                  Get Started Free
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="lg"
                   onClick={() => {
-                    const el = document.getElementById('why-hydra');
+                    const el = document.getElementById('features');
                     el?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="h-16 px-10 rounded-2xl text-gray-500 hover:text-blue-600"
+                  className="h-16 px-10 rounded-2xl text-slate-600 font-bold hover:bg-slate-100"
                 >
-                  See Why It Works
+                  How it Works
                 </Button>
               </motion.div>
             </div>
           </div>
+
+          {/* Connected Architecture Visual */}
+          <div className="mt-20 max-w-5xl mx-auto px-4 opacity-50">
+             <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent w-full relative">
+                <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-4 h-4 bg-white border border-slate-200 rounded-full shadow-sm"></div>
+                <div className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 bg-blue-600 text-white rounded-full shadow-xl flex items-center justify-center text-xs font-bold">H</div>
+                <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-4 h-4 bg-white border border-slate-200 rounded-full shadow-sm"></div>
+             </div>
+          </div>
         </section>
 
-        {/* Value Proposition */}
-        <section id="why-hydra" className="py-24 bg-slate-50 border-y border-slate-200">
+        {/* Feature OS Section */}
+        <section id="features" className="py-32 relative overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl transition-all group">
-                <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:rotate-6 transition-transform">
-                  <span className="text-2xl">📝</span>
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-4 text-left">Structured Notes</h3>
-                <p className="text-slate-600 leading-relaxed text-left">Linked directly to your courses. No more searching for "that one lecture" — it's exactly where it belongs.</p>
-              </div>
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl transition-all group">
-                <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:-rotate-6 transition-transform">
-                  <span className="text-2xl">⚡</span>
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-4 text-left">Academic Flow</h3>
-                <p className="text-slate-600 leading-relaxed text-left">Integrated timetable and calendar. We know when your exams are because you do. Stay ahead, always.</p>
-              </div>
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl transition-all group">
-                <div className="w-14 h-14 bg-purple-600 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:rotate-12 transition-transform">
-                  <span className="text-2xl">🤝</span>
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-4 text-left">The Library</h3>
-                <p className="text-slate-600 leading-relaxed text-left">Share your knowledge or learn from the best. Access a community-driven database of verified notes.</p>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+              {[
+                {
+                  icon: <BookOpen className="w-6 h-6" />,
+                  title: "Structured Notes",
+                  desc: "Linked directly to your courses. Organize by lecture, assignment, or concept.",
+                  color: "bg-blue-600"
+                },
+                {
+                  icon: <Zap className="w-6 h-6" />,
+                  title: "Study Assistance",
+                  desc: "Integrated AI Research and Audio Study. Master complex materials at 2x speed.",
+                  color: "bg-orange-600"
+                },
+                {
+                  icon: <Users className="w-6 h-6" />,
+                  title: "Academic Network",
+                  desc: "Share notes with your peers and build a collective knowledge base for your university.",
+                  color: "bg-emerald-600"
+                }
+              ].map((feat, i) => (
+                <motion.div 
+                  key={i}
+                  whileHover={{ y: -8 }}
+                  className="bg-white/80 backdrop-blur-md p-10 rounded-[40px] border border-white shadow-xl shadow-slate-200/50 group"
+                >
+                  <div className={`w-14 h-14 ${feat.color} rounded-2xl flex items-center justify-center text-white mb-8 shadow-lg shadow-blue-500/20`}>
+                    {feat.icon}
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-900 mb-4">{feat.title}</h3>
+                  <p className="text-slate-500 leading-relaxed font-medium">{feat.desc}</p>
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Social Proof Placeholder / Pitch */}
-        <section className="py-24 bg-white overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col lg:flex-row items-center gap-16">
-              <div className="flex-1 text-left">
-                <h2 className="text-4xl font-black text-slate-900 mb-6 leading-tight">
-                  Stop stressing. <br />
-                  Start <span className="text-blue-600">mastering</span> your degree.
-                </h2>
-                <div className="space-y-6">
-                  {[
-                    "Zero setup required. Just sign up and start learning.",
-                    "Mobile friendly. Study in the commute or in the library.",
-                    "99.9% Uptime. Your notes are always available when you need them.",
-                    "Built by NUST students who understand the struggle."
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-start space-x-3">
-                      <div className="mt-1 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-green-600 text-[10px] font-bold">✓</span>
-                      </div>
-                      <p className="text-slate-700 font-medium">{item}</p>
-                    </div>
-                  ))}
-                </div>
-                <Button 
-                  size="lg" 
-                  onClick={() => window.location.href = '/courses'}
-                  className="mt-10 h-14 rounded-xl px-8"
-                >
-                  Join the Community
-                </Button>
-              </div>
-              <div className="flex-1 relative">
-                 <div className="w-full h-[400px] bg-gradient-to-br from-slate-100 to-slate-200 rounded-3xl border-4 border-white shadow-2xl relative overflow-hidden flex items-center justify-center">
-                    <div className="text-6xl">🎓</div>
-                    <div className="absolute inset-0 bg-blue-600/5 backdrop-blur-[1px]"></div>
-                 </div>
-              </div>
-            </div>
+        {/* Closing Pitch */}
+        <section className="py-40 bg-slate-900 text-white relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500 via-transparent to-transparent"></div>
+          </div>
+          <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+            <h2 className="text-4xl md:text-6xl font-black mb-10 tracking-tighter">Your academic journey, optimized.</h2>
+            <Button 
+              size="lg" 
+              onClick={() => setIsAuthModalOpen(true)}
+              className="h-16 px-12 rounded-2xl bg-white text-slate-900 hover:bg-blue-50 text-xl font-black"
+            >
+              Start Building Now
+            </Button>
+            <p className="mt-8 text-slate-400 font-bold uppercase tracking-widest text-xs">Used by students from NUST & beyond</p>
           </div>
         </section>
         
@@ -236,49 +331,55 @@ function HomeContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col overflow-x-hidden" onMouseMove={handleMouseMove}>
       <Header onCreateCourse={handleCreateCourse} />
       
-      <main className="flex-1 flex">
-        <Sidebar />
+      <main className="flex-1 flex relative">
+        <BackgroundAura mouseX={smoothX} mouseY={smoothY} />
+        <Snowfall />
+        <Sidebar aria-label="Main Navigation" />
         
-        <main className="flex-1 p-4 md:p-8 mobile-safe-padding">
+        <main className="flex-1 p-4 md:p-8 mobile-safe-padding relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            {/* Header */}
-            <div className="mb-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Elite Dashboard Header */}
+            <div className="mb-12">
+              <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
                 <div>
-                  <h1 className="text-fluid-h1 text-gray-900">
-                    Welcome back, <span className="text-blue-600">{user.name?.split(' ')[0] || 'Student'}</span>!
+                  <motion.div 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex items-center space-x-2 text-blue-600 font-black uppercase tracking-[0.3em] text-[10px] mb-4"
+                  >
+                    <div className="w-8 h-[2px] bg-blue-600"></div>
+                     <span>Unified Command Center</span>
+                  </motion.div>
+                  <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none">
+                    Welcome back,<br />
+                    <span className="text-blue-600">{user.name?.split(' ')[0] || 'Student'}</span>.
                   </h1>
-                  <p className="text-gray-500 mt-3 text-lg">
-                    Here's a snapshot of your academic journey today.
-                    {isOffline && (
-                      <span className="ml-2 text-orange-600 font-bold bg-orange-50 px-2 py-1 rounded-lg text-sm uppercase">
-                        Offline
-                      </span>
-                    )}
-                    {lastSyncTime && (
-                      <span className="ml-2 text-sm text-gray-500">
-                        Last sync: {lastSyncTime.toLocaleTimeString()}
-                      </span>
-                    )}
-                  </p>
                 </div>
-                <div className="flex space-x-4">
+                <div className="flex flex-col sm:flex-row gap-4">
                   <Button
-                    variant="secondary"
+                    variant="ghost"
+                    size="lg"
                     onClick={refreshData}
                     disabled={isLoading}
+                    className="h-14 px-6 rounded-2xl bg-white/50 backdrop-blur-md border border-slate-200 hover:bg-white"
                   >
-                    {isLoading ? 'Refreshing...' : 'Refresh'}
+                    <Clock className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                    {isLoading ? 'Syncing...' : 'Sync Data'}
                   </Button>
-                  <Button onClick={handleCreateCourse}>
-                    Create Course
+                  <Button 
+                    size="lg" 
+                    onClick={handleCreateCourse}
+                    className="h-14 px-8 rounded-2xl font-black shadow-xl shadow-blue-500/20 bg-slate-900 group"
+                  >
+                    New Course
+                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </div>
               </div>

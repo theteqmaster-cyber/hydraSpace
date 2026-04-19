@@ -75,20 +75,20 @@ function HelpPageContent() {
                   <Shield className="w-10 h-10 text-blue-400 mb-6" />
                   <h3 className="text-2xl font-bold mb-4">Unshakeable Trust</h3>
                   <p className="text-slate-300 leading-relaxed">
-                    With **99.9% uptime** and enterprise-grade security via Supabase, your academic life is safe. Your notes won't disappear when you need them most.
+                    With **99.9% uptime** and enterprise-grade security via Supabase, your academic life is safe. Your notes won&apos;t disappear when you need them most.
                   </p>
                 </div>
               </div>
 
               {/* The Invitation Section */}
               <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[3rem] p-12 text-white relative overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                <div className="absolute inset-0 bg-[url(&apos;https://www.transparenttextures.com/patterns/cubes.png&apos;)] opacity-10"></div>
                 
                 <div className="relative z-10">
                   <span className="px-4 py-1 rounded-full bg-white/20 text-xs font-bold uppercase tracking-wider mb-6 inline-block">Invitation Only</span>
                   <h3 className="text-4xl font-black mb-6">Your digital notebook is here. <br />Ready to ace those exams?</h3>
                   <p className="text-blue-100 text-lg mb-10 max-w-xl">
-                    HydraSpace isn't just an app — it's a competitive advantage. Join the students from NUST and beyond who are reclaiming their time.
+                    HydraSpace isn&apos;t just an app &mdash; it&apos;s a competitive advantage. Join the students from NUST and beyond who are reclaiming their time.
                   </p>
                   
                   <div className="flex flex-col sm:flex-row gap-4">

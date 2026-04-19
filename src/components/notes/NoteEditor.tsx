@@ -5,7 +5,7 @@ import {
   Eye, EyeOff, FileText, BookOpen, AlertCircle, 
   CheckCircle, Bold, Italic, Heading, List, Code, Quote, 
   RefreshCw, ArrowLeft, Cloud, CloudOff, CloudLightning, 
-  Search, Sigma, Edit3, X
+  Search, Sigma, Edit3, X, Plus, Calendar
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Note, Course } from '@/types'
@@ -14,6 +14,8 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import { ResearchPanel } from './ResearchPanel'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
 // ─── Math symbol categories ───────────────────────────────────────────────────
 const MATH_SYMBOLS = {
@@ -130,6 +132,9 @@ export const NoteEditorComponent = ({
   const autoSaveTimeoutRef = useRef<any>(null)
   const debounceTimeoutRef = useRef<any>(null)
   const lastSavedRef = useRef<string>(JSON.stringify(formData))
+  const noteRef = useRef<HTMLDivElement>(null)
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false)
+  const [isExportingPDF, setIsExportingPDF] = useState(false)
 
   // Close math panel on outside click
   useEffect(() => {
@@ -309,6 +314,156 @@ export const NoteEditorComponent = ({
 
   const handleInsertFromResearch = (text: string) => insertMarkdown(text, '')
 
+  const handleDownloadPDF = async () => {
+    if (!noteRef.current) return
+    setIsExportingPDF(true)
+    
+    try {
+      const element = noteRef.current
+      
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        ignoreElements: (el) => {
+          // Ignore SVGs as they often carry modern color functions through currentColor
+          return el.tagName === 'SVG' || el.tagName === 'svg';
+        },
+        onclone: (clonedDoc) => {
+          // --- OPTIMIZED ACADEMIC STYLING (WHITE BG) ---
+          
+          const style = clonedDoc.createElement('style');
+          style.id = 'academic-pdf-style';
+          style.innerHTML = `
+            * { 
+              box-sizing: border-box; 
+              font-family: 'Outfit', sans-serif !important;
+              -webkit-print-color-adjust: exact;
+            }
+            body { 
+              background-color: #ffffff !important; 
+              margin: 0; 
+              padding: 0; 
+            }
+            
+            #pdf-container {
+              padding: 60px 80px;
+              min-height: 100%;
+              width: 100%;
+              background-color: #ffffff !important;
+            }
+            
+            h1 { font-size: 32pt; font-weight: 800; margin-bottom: 24pt; color: #000000 !important; letter-spacing: -0.02em; line-height: 1.1; }
+            h2 { font-size: 18pt; font-weight: 700; margin-top: 32pt; margin-bottom: 12pt; border-bottom: 2pt solid #e2e8f0; padding-bottom: 4pt; color: #1a202c !important; }
+            h3 { font-size: 14pt; font-weight: 600; margin-top: 20pt; margin-bottom: 8pt; color: #1a202c !important; }
+            
+            p { font-size: 12pt; line-height: 1.75; margin-bottom: 14pt; color: #2d3748 !important; }
+            strong, b { font-weight: 700; color: #000000 !important; }
+            
+            ul, ol { margin-bottom: 18pt; padding-left: 22pt; }
+            li { font-size: 12pt; line-height: 1.7; margin-bottom: 10pt; color: #2d3748 !important; }
+            
+            .pdf-header { margin-bottom: 40pt; border-bottom: 1px solid #e2e8f0; padding-bottom: 24pt; }
+            .pdf-branding-title { font-size: 16pt; font-weight: 900; color: #2563eb !important; margin-bottom: 4pt; }
+            .pdf-branding-tagline { font-size: 9pt; color: #718096 !important; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700; }
+            
+            .pdf-meta-grid { margin-top: 20pt; display: flex; gap: 40pt; }
+            .pdf-meta-item { border-left: 3px solid #e2e8f0; padding-left: 12pt; }
+            .pdf-meta-label { font-size: 8pt; color: #718096 !important; text-transform: uppercase; font-weight: 800; margin-bottom: 2pt; }
+            .pdf-meta-value { font-size: 10pt; font-weight: 700; color: #1a202c !important; }
+            
+            .pdf-footer { margin-top: 60pt; pt-8; border-top: 1px solid #e2e8f0; color: #718096 !important; font-size: 9pt; text-align: center; font-style: italic; padding-top: 20pt; }
+            .pdf-accent-line { background: #2563eb !important; height: 3pt; width: 40pt; margin-bottom: 12pt; }
+          `;
+          clonedDoc.head.appendChild(style);
+
+          const elementsToKill = clonedDoc.querySelectorAll('link[rel="stylesheet"], style:not(#academic-pdf-style)');
+          elementsToKill.forEach(el => el.remove());
+
+          const content = clonedDoc.querySelector('article') || clonedDoc.body;
+          const pdfWrapper = clonedDoc.createElement('div');
+          pdfWrapper.id = 'pdf-container';
+          
+          while (content.firstChild) {
+            pdfWrapper.appendChild(content.firstChild);
+          }
+          content.appendChild(pdfWrapper);
+
+          const header = clonedDoc.createElement('div');
+          header.className = 'pdf-header';
+          header.innerHTML = `
+            <div class="pdf-accent-line"></div>
+            <div class="pdf-branding-title">HYDRASPACE SUITE</div>
+            <div class="pdf-branding-tagline">Academic Productivity Interface</div>
+            
+            <div class="pdf-meta-grid">
+              <div class="pdf-meta-item">
+                <div class="pdf-meta-label">Course</div>
+                <div class="pdf-meta-value">${course?.name || 'General Studies'}</div>
+              </div>
+              <div class="pdf-meta-item">
+                <div class="pdf-meta-label">Category</div>
+                <div class="pdf-meta-value">${formData.type.toUpperCase()}</div>
+              </div>
+              <div class="pdf-meta-item">
+                <div class="pdf-meta-label">Date</div>
+                <div class="pdf-meta-value">${new Date().toLocaleDateString()}</div>
+              </div>
+            </div>
+          `;
+          pdfWrapper.insertBefore(header, pdfWrapper.firstChild);
+
+          const footer = clonedDoc.createElement('div');
+          footer.className = 'pdf-footer';
+          footer.innerHTML = `
+            This document was generated using HydraSpace - The Ultimate Digital Academic Hub.<br/>
+            &copy; ${new Date().getFullYear()} HydraSpace Academic Suite.
+          `;
+          pdfWrapper.appendChild(footer);
+
+          const all = clonedDoc.getElementsByTagName('*');
+          for (let i = 0; i < all.length; i++) {
+            const el = all[i] as HTMLElement;
+            if (el.getAttribute('style')) {
+              let s = el.getAttribute('style') || '';
+              s = s.replace(/lab\([^)]+\)/g, '#000000');
+              s = s.replace(/oklch\([^)]+\)/g, '#000000');
+              el.setAttribute('style', s);
+            }
+          }
+        }
+      })
+      
+      const imgData = canvas.toDataURL('image/jpeg', 0.9)
+      const pdf = new jsPDF('p', 'mm', 'a4', true) // true = compress
+      const imgProps = pdf.getImageProperties(imgData)
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      pdf.save(`HydraSpace_${formData.title || 'Note'}.pdf`)
+    } catch (err) {
+      console.error('PDF Export Error:', err)
+      alert("PDF Export failed. Please try a different browser or check console.")
+    } finally {
+      setIsExportingPDF(false)
+    }
+  }
+
+  const handleAudioStudy = () => {
+    if (isAudioPlaying) {
+      window.speechSynthesis.cancel()
+      setIsAudioPlaying(false)
+      return
+    }
+
+    const utterance = new SpeechSynthesisUtterance(formData.content)
+    utterance.onend = () => setIsAudioPlaying(false)
+    window.speechSynthesis.speak(utterance)
+    setIsAudioPlaying(true)
+  }
+
   const typeBadgeColor: Record<string, string> = {
     lecture: 'bg-blue-50 text-blue-700',
     assignment: 'bg-orange-50 text-orange-700',
@@ -319,9 +474,15 @@ export const NoteEditorComponent = ({
   // ─── READ MODE ──────────────────────────────────────────────────────────────
   if (mode === 'read') {
     return (
-      <div className="flex flex-col h-screen bg-white overflow-hidden w-full">
+      <div 
+        className="flex flex-col h-screen overflow-hidden w-full"
+        style={{ backgroundColor: '#f9f6e5', color: '#2d3748' }}
+      >
         {/* Read Header */}
-        <div className="px-5 md:px-10 py-4 border-b border-slate-100 shrink-0 flex items-center justify-between bg-white">
+        <div 
+          className="px-5 md:px-10 py-4 border-b border-slate-100 shrink-0 flex items-center justify-between z-20 sticky top-0"
+          style={{ backgroundColor: '#f9f6e5' }}
+        >
           <div className="flex items-center gap-3">
             <button
               onClick={handleBackClick}
@@ -330,54 +491,119 @@ export const NoteEditorComponent = ({
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${typeBadgeColor[formData.type] || 'bg-slate-100 text-slate-600'}`}>
-                  {formData.type}
-                </span>
-                {formData.is_shared && (
-                  <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-green-50 text-green-600">Shared</span>
-                )}
-              </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${typeBadgeColor[formData.type] || 'bg-slate-100 text-slate-600'}`}>
+                {formData.type}
+              </span>
+              <div className="h-4 w-px bg-slate-200 mx-1" />
+              <p className="text-xs font-bold text-slate-400 truncate max-w-[150px]">{course?.name || 'General'}</p>
             </div>
           </div>
-          <button
-            onClick={() => setMode('edit')}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-blue-600/20"
-          >
-            <Edit3 className="w-4 h-4" />
-            Edit Note
-          </button>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleAudioStudy}
+              className={`rounded-xl px-3 transition-all ${isAudioPlaying ? 'bg-orange-50 text-orange-600 border-orange-100' : 'text-slate-500 hover:bg-slate-50'}`}
+              title="Listen to Note"
+            >
+              <Plus className={`w-4 h-4 sm:mr-2 ${isAudioPlaying ? 'animate-pulse' : ''}`} />
+              <span className="hidden sm:inline">{isAudioPlaying ? 'Stop Audio' : 'Listen'}</span>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDownloadPDF}
+              disabled={isExportingPDF}
+              className="text-slate-500 hover:bg-slate-50 rounded-xl px-3"
+              title="Download PDF"
+            >
+              {isExportingPDF ? (
+                <RefreshCw className="w-4 h-4 animate-spin sm:mr-2" />
+              ) : (
+                <Cloud className="w-4 h-4 sm:mr-2" />
+              )}
+              <span className="hidden sm:inline">{isExportingPDF ? 'Generating...' : 'PDF'}</span>
+            </Button>
+
+            <div className="h-6 w-px bg-slate-100 mx-2" />
+
+            <button
+              onClick={() => setMode('edit')}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95"
+            >
+              <Edit3 className="w-4 h-4" />
+              Edit
+            </button>
+          </div>
         </div>
 
-        {/* Read Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          <article className="max-w-3xl mx-auto px-6 md:px-10 py-10 md:py-16">
-            <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-8 leading-tight">
-              {formData.title || 'Untitled Note'}
-            </h1>
-            {formData.content ? (
-              <div className="prose prose-base md:prose-lg prose-slate max-w-none">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm, remarkMath]}
-                  rehypePlugins={[rehypeKatex]}
-                >
-                  {formData.content}
-                </ReactMarkdown>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-24 text-slate-200">
-                <FileText className="w-16 h-16 mb-4" />
-                <p className="text-sm font-medium tracking-wide uppercase">No content yet</p>
-                <button
-                  onClick={() => setMode('edit')}
-                  className="mt-4 text-blue-500 text-sm font-bold hover:text-blue-700 transition-colors"
-                >
-                  Start writing →
-                </button>
-              </div>
-            )}
-          </article>
+        {/* Read Content Area with Split Pane */}
+        <div className="flex-1 flex overflow-hidden">
+          <div 
+            className="flex-1 overflow-y-auto custom-scrollbar"
+            style={{ backgroundColor: '#f9f6e5' }}
+          >
+            {/* PDF Export Container */}
+            <div 
+              ref={noteRef} 
+              className="min-h-full"
+              style={{ backgroundColor: '#f9f6e5' }}
+            >
+              <article className="max-w-3xl mx-auto px-8 md:px-12 py-12 md:py-20 relative">
+                {/* Academic Header Branding (PDF visible) */}
+                <div className="mb-12 flex justify-between items-start border-b border-slate-100 pb-8">
+                  <div>
+                    <h1 className="text-4xl font-black text-slate-900 mb-2 leading-tight">
+                      {formData.title || 'Untitled Note'}
+                    </h1>
+                    <div className="flex flex-wrap gap-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                      <span className="flex items-center"><BookOpen className="w-3 h-3 mr-1" /> {course?.name || 'General Academic'}</span>
+                      <span className="flex items-center"><Calendar className="w-3 h-3 mr-1" /> {new Date().toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="premium-gradient w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xl mb-1 ml-auto">H</div>
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">HydraSpace Suite</p>
+                  </div>
+                </div>
+
+                {formData.content ? (
+                  <div className="prose prose-base md:prose-lg prose-slate max-w-none">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                    >
+                      {formData.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-24 text-slate-200">
+                    <FileText className="w-16 h-16 mb-4" />
+                    <p className="text-sm font-medium tracking-wide uppercase">Empty Learning Space</p>
+                  </div>
+                )}
+
+                {/* Academic Footer Branding */}
+                <div className="mt-20 pt-8 border-t border-slate-100 text-center">
+                   <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                     This document was generated using HydraSpace - The Ultimate Digital Academic Hub
+                   </p>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          {/* Mphathi AI Workspace Panel (visible on large screens) */}
+          <div className="hidden xl:block w-96 border-l border-slate-100 bg-paper">
+            <ResearchPanel
+              initialQuery={formData.title}
+              onInsert={() => {}} // No insert needed in Read Mode
+              onClose={() => {}} // Permanent on large screens
+            />
+          </div>
         </div>
       </div>
     )
@@ -385,10 +611,15 @@ export const NoteEditorComponent = ({
 
   // ─── EDIT MODE ──────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden text-slate-900 w-full">
-
+    <div 
+      className="flex flex-col h-screen overflow-hidden w-full font-outfit"
+      style={{ backgroundColor: '#f9f6e5', color: '#2d3748' }}
+    >
       {/* Edit Header */}
-      <div className="px-5 md:px-8 py-4 border-b border-slate-200 shrink-0 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between bg-white w-full">
+      <div 
+        className="px-5 md:px-8 py-4 border-b border-slate-200 shrink-0 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between w-full"
+        style={{ backgroundColor: '#f9f6e5' }}
+      >
         <div className="flex items-center gap-3 w-full md:w-auto">
           <button
             onClick={note ? () => setMode('read') : handleBackClick}
@@ -434,7 +665,7 @@ export const NoteEditorComponent = ({
       </div>
 
       {/* Toolbar */}
-      <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex items-center justify-between overflow-x-auto shrink-0 hide-scrollbar scrollbar-hide w-full">
+      <div className="bg-paper/50 backdrop-blur-sm border-b border-slate-200 px-4 py-2 flex items-center justify-between overflow-x-auto shrink-0 hide-scrollbar scrollbar-hide w-full">
         <div className="flex items-center space-x-1 min-w-max">
           <button onClick={() => insertMarkdown('**', '**')} className="p-1.5 rounded text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors" title="Bold"><Bold className="w-4 h-4" /></button>
           <button onClick={() => insertMarkdown('*', '*')} className="p-1.5 rounded text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors" title="Italic"><Italic className="w-4 h-4" /></button>
@@ -551,10 +782,14 @@ export const NoteEditorComponent = ({
       <div className="flex-1 flex overflow-hidden w-full">
         {/* Write pane */}
         {(viewMode === 'write' || viewMode === 'split') && (
-          <div className={`flex-1 flex flex-col min-w-0 ${viewMode === 'split' ? 'border-r border-slate-200' : ''}`}>
+          <div 
+            className={`flex-1 flex flex-col min-w-0 ${viewMode === 'split' ? 'border-r border-slate-200' : ''}`}
+            style={{ backgroundColor: '#f9f6e5' }}
+          >
             <textarea
               ref={textareaRef}
-              className="flex-1 w-full p-6 md:p-10 bg-white border-none focus:outline-none focus:ring-0 resize-none text-slate-800 font-mono text-sm leading-loose custom-scrollbar"
+              className="flex-1 w-full p-6 md:p-10 border-none focus:outline-none focus:ring-0 resize-none font-mono text-base leading-loose custom-scrollbar"
+              style={{ backgroundColor: '#f9f6e5', color: '#2d3748' }}
               placeholder="What are we learning today?"
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
@@ -564,18 +799,18 @@ export const NoteEditorComponent = ({
 
         {/* Right pane (preview / research) */}
         {(viewMode === 'preview' || viewMode === 'split') && (
-          <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden relative">
+          <div className="flex-1 flex flex-col bg-paper overflow-hidden relative">
             {/* Tabs */}
-            <div className="flex border-b border-slate-200 bg-white shrink-0">
+            <div className="flex border-b border-slate-200 bg-paper shrink-0">
               <button
                 onClick={() => setRightPaneMode('preview')}
-                className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest transition-colors ${rightPaneMode === 'preview' ? 'text-blue-700 bg-white border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-800 hover:bg-slate-50'}`}
+                className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest transition-colors ${rightPaneMode === 'preview' ? 'text-blue-700 bg-paper border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-800 hover:bg-paper/50'}`}
               >
                 Output
               </button>
               <button
                 onClick={() => setRightPaneMode('research')}
-                className={`flex-1 flex items-center justify-center py-3 text-xs font-bold uppercase tracking-widest transition-colors ${rightPaneMode === 'research' ? 'text-blue-700 bg-white border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-800 hover:bg-slate-50'}`}
+                className={`flex-1 flex items-center justify-center py-3 text-xs font-bold uppercase tracking-widest transition-colors ${rightPaneMode === 'research' ? 'text-blue-700 bg-paper border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-800 hover:bg-paper/50'}`}
               >
                 <Search className="w-3.5 h-3.5 mr-1.5" /> Research
               </button>

@@ -47,8 +47,8 @@ export const ResearchPanel = ({ initialQuery = '', onInsert, onClose }: Research
   }, [messages])
 
   useEffect(() => {
-    if (initialQuery) {
-      handleSend(initialQuery)
+    if (initialQuery && messages.length <= 1) {
+      setInput(initialQuery)
     }
   }, [initialQuery])
 
@@ -102,9 +102,15 @@ export const ResearchPanel = ({ initialQuery = '', onInsert, onClose }: Research
   }
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-hidden relative border-l border-slate-200">
+    <div 
+      className="flex flex-col h-full overflow-hidden relative border-l border-slate-200"
+      style={{ backgroundColor: '#f9f6e5' }}
+    >
       {/* Header */}
-      <div className="p-4 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between">
+      <div 
+        className="p-4 border-b border-slate-200 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between"
+        style={{ backgroundColor: 'rgba(249, 246, 229, 0.8)' }}
+      >
         <div className="flex items-center space-x-2">
           {onClose && (
             <button 
@@ -216,7 +222,10 @@ export const ResearchPanel = ({ initialQuery = '', onInsert, onClose }: Research
       </div>
 
       {/* Input Area */}
-      <div className="p-4 bg-white border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.02)] z-20">
+      <div 
+        className="p-4 border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.02)] z-20"
+        style={{ backgroundColor: '#f9f6e5' }}
+      >
         <form onSubmit={handleSubmit} className="relative flex items-center">
           <input 
             ref={inputRef}

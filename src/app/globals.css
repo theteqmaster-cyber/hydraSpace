@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 @import "tailwindcss";
 @import "katex/dist/katex.min.css";
 
@@ -7,6 +8,8 @@
   --surface: #ffffff;
   --surface-hover: #f8fafc;
   --border: #e2e8f0;
+  --paper-ivory: #fdfbf7;
+  --paper-text: #1e293b;
 }
 
 @theme inline {
@@ -14,6 +17,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper-ivory);
+  --color-paper-foreground: var(--paper-text);
 }
 
 /* Force light mode — app design is light-only */
@@ -71,4 +76,20 @@ body {
 ::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
   border-radius: 10px;
+}
+
+/* Note Viewer Premium Font Utility */
+.font-outfit {
+  font-family: 'Outfit', sans-serif;
+}
+
+/* PDF Export Stabilization */
+.pdf-export-mode * {
+  color: #2d3748 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.pdf-export-mode .bg-paper, 
+.pdf-export-mode [style*="background-color"] {
+  background-color: #f9f6e5 !important;
 }

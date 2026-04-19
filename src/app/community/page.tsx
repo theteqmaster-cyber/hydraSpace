@@ -379,7 +379,7 @@ function CommunityPageContent() {
                   
                   {!searchQuery && !hasMore && displayNotes.length > 0 && (
                     <div className="mt-12 text-center text-sm font-medium text-gray-400">
-                      You've reached the end of the network.
+                      You&apos;ve reached the end of the network.
                     </div>
                   )}
                 </>
