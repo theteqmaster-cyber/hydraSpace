@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Note, Course } from '@/types'
+import { getGeminiResponse } from '@/lib/gemini'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
@@ -143,6 +144,7 @@ export const NoteEditorComponent = ({
   
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
   const [isExportingPDF, setIsExportingPDF] = useState(false)
+  const [isFormatting, setIsFormatting] = useState(false)
   const [isMphathiVisibleOnMobile, setIsMphathiVisibleOnMobile] = useState(false)
 
   // ─── TipTap Editor Setup ──────────────────────────────────────────────────
@@ -277,6 +279,16 @@ export const NoteEditorComponent = ({
     return () => clearTimeout(autoSaveTimeoutRef.current)
   }, [formData])
 
+  // Reset save status to idle after a successful save
+  useEffect(() => {
+    if (saveStatus === 'saved') {
+      const timer = setTimeout(() => {
+        setSaveStatus('idle')
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [saveStatus])
+
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges) { e.preventDefault(); e.returnValue = '' }
@@ -339,6 +351,38 @@ export const NoteEditorComponent = ({
   const handleInsertFromResearch = (text: string) => {
     if (editor) {
       editor.chain().focus().insertContent(text).run()
+    }
+  }
+
+  const handleFmart = async () => {
+    if (!editor || isFormatting) return
+
+    const { from, to } = editor.state.selection
+    const selection = editor.state.doc.textBetween(from, to, ' ').trim()
+
+    if (!selection) {
+      alert('Please highlight some text first to use fmart!')
+      return
+    }
+
+    setIsFormatting(true)
+    try {
+      const prompt = `You are an expert academic editor. Format the following raw text into clean, professional Markdown. 
+      Identify headings (using #, ##, or ###), bold text for emphasis where appropriate, and ensure paragraphs are well-structured. 
+      Keep the tone academic and professional. Do not add any conversational filler, only return the formatted markdown.
+      
+      Raw Text:
+      "${selection}"`
+
+      const formattedText = await getGeminiResponse(prompt)
+      
+      // Replace selection with AI formatted text
+      editor.chain().focus().deleteRange({ from, to }).insertContent(formattedText).run()
+    } catch (error) {
+      console.error('Fmart AI Error:', error)
+      alert('Mphathi failed to format the text. Please check your connection.')
+    } finally {
+      setIsFormatting(false)
     }
   }
 
@@ -846,6 +890,20 @@ export const NoteEditorComponent = ({
           >
             <Search className="w-4 h-4" />
             <span className="text-xs font-bold tracking-wide">Research</span>
+          </button>
+
+          <button
+            onClick={handleFmart}
+            disabled={isFormatting}
+            className={`flex items-center space-x-1.5 p-1.5 px-3 rounded-md transition-all shadow-sm ${isFormatting ? 'bg-indigo-600 text-white animate-pulse' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white border border-indigo-100'}`}
+            title="AI Smart Format (fmart)"
+          >
+            {isFormatting ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4" />
+            )}
+            <span className="text-xs font-black tracking-tight uppercase">fmart</span>
           </button>
 
 
