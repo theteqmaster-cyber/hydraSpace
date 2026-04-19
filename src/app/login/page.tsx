@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { X, Mail, Lock, User, GraduationCap, Eye, EyeOff, Loader2, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { signUp, signIn, sendPasswordResetEmail } from '@/lib/auth'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { LoadingScreen } from '@/components/ui/LoadingScreen'
 
 type AuthMode = 'signin' | 'signup' | 'reset'
 
@@ -39,7 +40,7 @@ const BackgroundAura = () => {
   )
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialMode = (searchParams.get('mode') as AuthMode) || 'signin'
@@ -196,7 +197,7 @@ export default function LoginPage() {
                         placeholder="••••••••"
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        required={mode !== 'reset'}
+                        required
                       />
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <button
@@ -276,5 +277,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <LoginContent />
+    </Suspense>
   )
 }
