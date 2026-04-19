@@ -36,6 +36,8 @@ CREATE TABLE notes (
   type TEXT NOT NULL CHECK (type IN ('lecture', 'assignment', 'test', 'concept')),
   lecture_number INTEGER,
   is_shared BOOLEAN DEFAULT FALSE,
+  upvotes INTEGER DEFAULT 0,
+  upvoted_by UUID[] DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

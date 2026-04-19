@@ -18,11 +18,12 @@ interface Message {
 
 interface ResearchPanelProps {
   initialQuery?: string
+  context?: string
   onInsert?: (text: string) => void
   onClose?: () => void
 }
 
-export const ResearchPanel = ({ initialQuery = '', onInsert, onClose }: ResearchPanelProps) => {
+export const ResearchPanel = ({ initialQuery = '', context = '', onInsert, onClose }: ResearchPanelProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'model',
@@ -56,9 +57,12 @@ export const ResearchPanel = ({ initialQuery = '', onInsert, onClose }: Research
     const prompt = text.trim()
     if (!prompt || isLoading) return
 
+    // Inject context if available for first message or explicit actions
+    const finalPrompt = context ? `Context: ${context}\n\nUser Question: ${prompt}` : prompt
+
     const userMessage: Message = {
       role: 'user',
-      content: prompt,
+      content: prompt, // Keep the UI message clean
       id: Date.now().toString()
     }
 
@@ -73,7 +77,7 @@ export const ResearchPanel = ({ initialQuery = '', onInsert, onClose }: Research
         parts: [{ text: m.content }]
       }))
 
-      const response = await getGeminiResponse(prompt, history)
+      const response = await getGeminiResponse(finalPrompt, history)
       
       const aiMessage: Message = {
         role: 'model',
@@ -141,6 +145,25 @@ export const ResearchPanel = ({ initialQuery = '', onInsert, onClose }: Research
         >
           Reset Chat
         </Button>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="px-4 py-2 border-b border-slate-100 flex gap-2 overflow-x-auto hide-scrollbar scrollbar-hide bg-white/50">
+        {[
+          { label: 'Summarize', prompt: 'Summarize this note in 5 bullet points.' },
+          { label: 'Concepts', prompt: 'What are the 3 key concepts in this note?' },
+          { label: 'Exam Tips', prompt: 'Generate 3 exam tips based on this note.' },
+          { label: 'Explain', prompt: 'Explain this note to me like I am 5.' }
+        ].map(action => (
+          <button
+            key={action.label}
+            onClick={() => handleSend(action.prompt)}
+            disabled={isLoading}
+            className="whitespace-nowrap px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider hover:bg-blue-600 hover:text-white transition-all border border-blue-100/50"
+          >
+            {action.label}
+          </button>
+        ))}
       </div>
 
       {/* Chat Messages */}

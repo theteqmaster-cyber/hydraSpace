@@ -59,9 +59,9 @@ function EditNotePageContent() {
       
       refreshData() // Background refresh
       return savedNote
-    } catch (error) {
-      console.error('Error saving note:', error)
-      alert('Failed to save note. Please check your connection.')
+    } catch (error: any) {
+      console.error('Error saving note:', error?.message || error)
+      alert(`Failed to save note: ${error?.message || 'Please check your connection.'}`)
     }
   }
 

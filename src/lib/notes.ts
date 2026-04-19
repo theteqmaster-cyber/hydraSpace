@@ -24,32 +24,57 @@ export const getNotesForCourse = async (courseId: string): Promise<Note[]> => {
 }
 
 export const createNote = async (note: Omit<Note, 'id' | 'created_at' | 'updated_at'>): Promise<Note> => {
+  // Cleanse note data to avoid passing restricted columns
+  const { id: _id, ...cleanNote } = note as any
+
   const { data, error } = await supabase
     .from('notes')
     .insert({
-      ...note,
+      ...cleanNote,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    console.error('Create Note Error Details:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      fullError: error
+    })
+    throw error
+  }
   return data
 }
 
 export const updateNote = async (id: string, note: Partial<Omit<Note, 'id' | 'user_id' | 'course_id' | 'created_at'>>): Promise<Note> => {
+  // Cleanse note data to avoid passing restricted columns in the update body
+  const { id: _id, user_id: _uid, course_id: _cid, created_at: _ca, ...cleanNote } = note as any
+
   const { data, error } = await supabase
     .from('notes')
     .update({
-      ...note,
+      ...cleanNote,
       updated_at: new Date().toISOString()
     })
     .eq('id', id)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    console.error('Update Note Error:', error.message || 'Unknown error');
+    console.error('Update Note Error Details:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      fullError: error
+    })
+    throw error
+  }
   return data
 }
 

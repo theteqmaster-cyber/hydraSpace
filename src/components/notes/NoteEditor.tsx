@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { 
   Eye, EyeOff, FileText, BookOpen, AlertCircle, 
-  CheckCircle, Bold, Italic, Heading, List, Code, Quote, 
+  CheckCircle, Bold, Italic, Heading, List, ListOrdered, Code, Quote, 
   RefreshCw, ArrowLeft, Cloud, CloudOff, CloudLightning, 
-  Search, Sigma, Edit3, X, Plus, Calendar, Sparkles
+  Search, Sigma, Edit3, X, Plus, Calendar, Sparkles,
+  Headphones, FileDown, Paperclip, ExternalLink
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Note, Course } from '@/types'
@@ -17,6 +18,12 @@ import { ResearchPanel } from './ResearchPanel'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import { Markdown } from 'tiptap-markdown'
+import Placeholder from '@tiptap/extension-placeholder'
+import Typography from '@tiptap/extension-typography'
+import Link from '@tiptap/extension-link'
 
 // ─── Math symbol categories ───────────────────────────────────────────────────
 const MATH_SYMBOLS = {
@@ -120,7 +127,7 @@ export const NoteEditorComponent = ({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   
   const [viewMode, setViewMode] = useState<'write' | 'preview' | 'split'>('split')
-  const [rightPaneMode, setRightPaneMode] = useState<'preview' | 'research'>('preview')
+  const [rightPaneMode, setRightPaneMode] = useState<'preview' | 'research' | 'pdf'>('preview')
   const [researchQuery, setResearchQuery] = useState('')
   const [debouncedContent, setDebouncedContent] = useState(formData.content)
 
@@ -129,14 +136,52 @@ export const NoteEditorComponent = ({
   const [activeMathCategory, setActiveMathCategory] = useState<MathCategory>('Greek')
   const mathPanelRef = useRef<HTMLDivElement>(null)
   
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const autoSaveTimeoutRef = useRef<any>(null)
   const debounceTimeoutRef = useRef<any>(null)
   const lastSavedRef = useRef<string>(JSON.stringify(formData))
   const noteRef = useRef<HTMLDivElement>(null)
+  
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
   const [isExportingPDF, setIsExportingPDF] = useState(false)
   const [isMphathiVisibleOnMobile, setIsMphathiVisibleOnMobile] = useState(false)
+
+  // ─── TipTap Editor Setup ──────────────────────────────────────────────────
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+        bulletList: { keepAttributes: true, keepMarks: true },
+        orderedList: { keepAttributes: true, keepMarks: true },
+      }),
+      Markdown.configure({
+        html: false,
+      }),
+      Placeholder.configure({
+        placeholder: 'What are we learning today?',
+      }),
+      Typography,
+      Link.configure({
+        openOnClick: false,
+      }),
+    ],
+    content: formData.content,
+    editorProps: {
+      attributes: {
+        class: 'prose prose-base md:prose-lg prose-slate max-w-none focus:outline-none min-h-[500px] p-6 md:p-10 font-outfit [&>p]:mt-0 [&>p]:mb-4',
+      },
+    },
+    onUpdate: ({ editor }) => {
+      const markdown = (editor as any).storage.markdown.getMarkdown()
+      setFormData(prev => ({ ...prev, content: markdown }))
+    },
+  })
+
+  // Sync external changes to editor (e.g. from ResearchPanel or initial load)
+  useEffect(() => {
+    if (editor && formData.content !== (editor as any).storage.markdown.getMarkdown()) {
+      editor.commands.setContent(formData.content, false)
+    }
+  }, [formData.content, editor])
 
   // Close math panel on outside click
   useEffect(() => {
@@ -198,11 +243,11 @@ export const NoteEditorComponent = ({
   }, [courseId, note])
 
   useEffect(() => {
-    const draftKey = `hydra_note_draft_${courseId}_${note?.id || 'new'}`
+    const draftKey = `hydra_note_draft_${courseId}_${trackedNoteId || 'new'}`
     if (hasUnsavedChanges) {
       localStorage.setItem(draftKey, JSON.stringify(formData))
     }
-  }, [formData, hasUnsavedChanges, courseId, note])
+  }, [formData, hasUnsavedChanges, courseId, trackedNoteId])
 
   const handleAutoSave = async () => {
     if (!formData.title.trim() || !formData.content.trim()) return
@@ -215,6 +260,7 @@ export const NoteEditorComponent = ({
       setHasUnsavedChanges(false)
       setSaveStatus('saved')
     } catch (error) {
+      console.error('AutoSave Failure:', error)
       setSaveStatus('error')
     } finally {
       setIsSaving(false)
@@ -252,7 +298,9 @@ export const NoteEditorComponent = ({
       localStorage.removeItem(`hydra_note_draft_${courseId}_${trackedNoteId || 'new'}`)
       setSaveStatus('saved')
     } catch (error) {
+      console.error('Manual Save Failure:', error)
       setSaveStatus('error')
+      alert('Save failed! Please check your connection or contact support. To prevent data loss, please copy your content manually.')
     } finally {
       setIsSaving(false)
     }
@@ -266,55 +314,33 @@ export const NoteEditorComponent = ({
     onBack()
   }
 
-  const insertMarkdown = (prefix: string, suffix: string = '') => {
-    if (!textareaRef.current) return
-    const start = textareaRef.current.selectionStart
-    const end = textareaRef.current.selectionEnd
-    const text = formData.content
-    const before = text.substring(0, start)
-    const selection = text.substring(start, end)
-    const after = text.substring(end)
-    const newText = `${before}${prefix}${selection || 'text'}${suffix}${after}`
-    setFormData(prev => ({ ...prev, content: newText }))
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus()
-        const newCursorPos = start + prefix.length + (selection ? selection.length : 4)
-        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos)
-      }
-    }, 0)
-  }
-
-  const insertSymbol = (symbol: string) => {
-    if (!textareaRef.current) {
-      setFormData(prev => ({ ...prev, content: prev.content + symbol }))
-      return
+  const insertMarkdown = (text: string) => {
+    if (editor) {
+      editor.chain().focus().insertContent(text).run()
     }
-    const start = textareaRef.current.selectionStart
-    const end = textareaRef.current.selectionEnd
-    const text = formData.content
-    const newText = text.substring(0, start) + symbol + text.substring(end)
-    setFormData(prev => ({ ...prev, content: newText }))
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus()
-        textareaRef.current.setSelectionRange(start + symbol.length, start + symbol.length)
-      }
-    }, 0)
+  }
+  
+  const insertSymbol = (symbol: string) => {
+    if (editor) {
+      editor.chain().focus().insertContent(symbol).run()
+    }
   }
 
   const handleLookupText = () => {
-    if (textareaRef.current) {
-      const start = textareaRef.current.selectionStart
-      const end = textareaRef.current.selectionEnd
-      const selection = formData.content.substring(start, end).trim()
+    if (editor) {
+      const { from, to } = editor.state.selection
+      const selection = editor.state.doc.textBetween(from, to, ' ').trim()
       if (selection) setResearchQuery(selection)
     }
     setRightPaneMode('research')
     setViewMode(window.innerWidth < 768 ? 'preview' : 'split')
   }
 
-  const handleInsertFromResearch = (text: string) => insertMarkdown(text, '')
+  const handleInsertFromResearch = (text: string) => {
+    if (editor) {
+      editor.chain().focus().insertContent(text).run()
+    }
+  }
 
   const handleDownloadPDF = async () => {
     if (!noteRef.current) return
@@ -329,52 +355,29 @@ export const NoteEditorComponent = ({
         logging: false,
         backgroundColor: '#ffffff',
         ignoreElements: (el) => {
-          // Ignore SVGs as they often carry modern color functions through currentColor
           return el.tagName === 'SVG' || el.tagName === 'svg';
         },
         onclone: (clonedDoc) => {
-          // --- OPTIMIZED ACADEMIC STYLING (WHITE BG) ---
-          
           const style = clonedDoc.createElement('style');
           style.id = 'academic-pdf-style';
           style.innerHTML = `
-            * { 
-              box-sizing: border-box; 
-              font-family: 'Outfit', sans-serif !important;
-              -webkit-print-color-adjust: exact;
-            }
-            body { 
-              background-color: #ffffff !important; 
-              margin: 0; 
-              padding: 0; 
-            }
-            
-            #pdf-container {
-              padding: 60px 80px;
-              min-height: 100%;
-              width: 100%;
-              background-color: #ffffff !important;
-            }
-            
+            * { box-sizing: border-box; font-family: 'Outfit', sans-serif !important; -webkit-print-color-adjust: exact; }
+            body { background-color: #ffffff !important; margin: 0; padding: 0; }
+            #pdf-container { padding: 60px 80px; min-height: 100%; width: 100%; background-color: #ffffff !important; }
             h1 { font-size: 32pt; font-weight: 800; margin-bottom: 24pt; color: #000000 !important; letter-spacing: -0.02em; line-height: 1.1; }
             h2 { font-size: 18pt; font-weight: 700; margin-top: 32pt; margin-bottom: 12pt; border-bottom: 2pt solid #e2e8f0; padding-bottom: 4pt; color: #1a202c !important; }
             h3 { font-size: 14pt; font-weight: 600; margin-top: 20pt; margin-bottom: 8pt; color: #1a202c !important; }
-            
             p { font-size: 12pt; line-height: 1.75; margin-bottom: 14pt; color: #2d3748 !important; }
             strong, b { font-weight: 700; color: #000000 !important; }
-            
             ul, ol { margin-bottom: 18pt; padding-left: 22pt; }
             li { font-size: 12pt; line-height: 1.7; margin-bottom: 10pt; color: #2d3748 !important; }
-            
             .pdf-header { margin-bottom: 40pt; border-bottom: 1px solid #e2e8f0; padding-bottom: 24pt; }
             .pdf-branding-title { font-size: 16pt; font-weight: 900; color: #2563eb !important; margin-bottom: 4pt; }
             .pdf-branding-tagline { font-size: 9pt; color: #718096 !important; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700; }
-            
             .pdf-meta-grid { margin-top: 20pt; display: flex; gap: 40pt; }
             .pdf-meta-item { border-left: 3px solid #e2e8f0; padding-left: 12pt; }
             .pdf-meta-label { font-size: 8pt; color: #718096 !important; text-transform: uppercase; font-weight: 800; margin-bottom: 2pt; }
             .pdf-meta-value { font-size: 10pt; font-weight: 700; color: #1a202c !important; }
-            
             .pdf-footer { margin-top: 60pt; pt-8; border-top: 1px solid #e2e8f0; color: #718096 !important; font-size: 9pt; text-align: center; font-style: italic; padding-top: 20pt; }
             .pdf-accent-line { background: #2563eb !important; height: 3pt; width: 40pt; margin-bottom: 12pt; }
           `;
@@ -437,13 +440,26 @@ export const NoteEditorComponent = ({
         }
       })
       
-      const imgData = canvas.toDataURL('image/jpeg', 0.9)
-      const pdf = new jsPDF('p', 'mm', 'a4', true) // true = compress
+      const imgData = canvas.toDataURL('image/jpeg', 0.95)
+      const pdf = new jsPDF('p', 'mm', 'a4')
       const imgProps = pdf.getImageProperties(imgData)
       const pdfWidth = pdf.internal.pageSize.getWidth()
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
+      const pageHeight = pdf.internal.pageSize.getHeight()
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      let heightLeft = pdfHeight
+      let position = 0
+
+      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight)
+      heightLeft -= pageHeight
+
+      while (heightLeft > 0) {
+        position = heightLeft - pdfHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight)
+        heightLeft -= pageHeight
+      }
+
       pdf.save(`HydraSpace_${formData.title || 'Note'}.pdf`)
     } catch (err) {
       console.error('PDF Export Error:', err)
@@ -480,7 +496,6 @@ export const NoteEditorComponent = ({
         className="flex flex-col h-screen overflow-hidden w-full"
         style={{ backgroundColor: '#f9f6e5', color: '#2d3748' }}
       >
-        {/* Read Header */}
         <div 
           className="px-5 md:px-10 py-4 border-b border-slate-100 shrink-0 flex items-center justify-between z-20 sticky top-0 overflow-x-auto hide-scrollbar scrollbar-hide"
           style={{ backgroundColor: '#f9f6e5' }}
@@ -519,8 +534,8 @@ export const NoteEditorComponent = ({
               className={`rounded-xl px-3 transition-all ${isAudioPlaying ? 'bg-orange-50 text-orange-600 border-orange-100' : 'text-slate-500 hover:bg-slate-50'}`}
               title="Listen to Note"
             >
-              <Plus className={`w-4 h-4 sm:mr-2 ${isAudioPlaying ? 'animate-pulse' : ''}`} />
-              <span className="hidden sm:inline">{isAudioPlaying ? 'Stop Audio' : 'Listen'}</span>
+              <Headphones className={`w-4 h-4 sm:mr-2 ${isAudioPlaying ? 'animate-pulse' : ''}`} />
+              <span className="hidden sm:inline">{isAudioPlaying ? 'Stop Audio' : 'Study Audio'}</span>
             </Button>
             
             <Button
@@ -534,9 +549,9 @@ export const NoteEditorComponent = ({
               {isExportingPDF ? (
                 <RefreshCw className="w-4 h-4 animate-spin sm:mr-2" />
               ) : (
-                <Cloud className="w-4 h-4 sm:mr-2" />
+                <FileDown className="w-4 h-4 sm:mr-2" />
               )}
-              <span className="hidden sm:inline">{isExportingPDF ? 'Generating...' : 'PDF'}</span>
+              <span className="hidden sm:inline">{isExportingPDF ? 'Generating...' : 'Export PDF'}</span>
             </Button>
 
             <div className="h-6 w-px bg-slate-100 mx-2" />
@@ -582,7 +597,7 @@ export const NoteEditorComponent = ({
                 </div>
 
                 {formData.content ? (
-                  <div className="prose prose-base md:prose-lg prose-slate max-w-none">
+                  <div className="prose prose-base md:prose-lg prose-slate max-w-none [&>p]:mt-0 [&>p]:mb-4">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm, remarkMath]}
                       rehypePlugins={[rehypeKatex]}
@@ -611,6 +626,7 @@ export const NoteEditorComponent = ({
           <div className="hidden xl:block w-96 border-l border-slate-100 bg-paper">
             <ResearchPanel
               initialQuery={formData.title}
+              context={formData.content}
               onInsert={() => {}} // No insert needed in Read Mode
               onClose={() => {}} // Permanent on large screens
             />
@@ -629,6 +645,7 @@ export const NoteEditorComponent = ({
             >
               <ResearchPanel
                 initialQuery={formData.title}
+                context={formData.content}
                 onInsert={handleInsertFromResearch}
                 onClose={() => setIsMphathiVisibleOnMobile(false)}
               />
@@ -707,15 +724,62 @@ export const NoteEditorComponent = ({
       {/* Toolbar */}
       <div className="bg-paper/50 backdrop-blur-sm border-b border-slate-200 px-4 py-2 flex items-center justify-between overflow-x-auto shrink-0 hide-scrollbar scrollbar-hide w-full">
         <div className="flex items-center space-x-1 min-w-max">
-          <button onClick={() => insertMarkdown('**', '**')} className="p-1.5 rounded text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors" title="Bold"><Bold className="w-4 h-4" /></button>
-          <button onClick={() => insertMarkdown('*', '*')} className="p-1.5 rounded text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors" title="Italic"><Italic className="w-4 h-4" /></button>
+          <button 
+            onClick={() => editor?.chain().focus().toggleBold().run()} 
+            className={`p-1.5 rounded transition-colors ${editor?.isActive('bold') ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-900'}`}
+            title="Bold"
+          >
+            <Bold className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={() => editor?.chain().focus().toggleItalic().run()} 
+            className={`p-1.5 rounded transition-colors ${editor?.isActive('italic') ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-900'}`}
+            title="Italic"
+          >
+            <Italic className="w-4 h-4" />
+          </button>
           <div className="w-px h-4 bg-slate-300 mx-1" />
-          <button onClick={() => insertMarkdown('### ')} className="p-1.5 rounded text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors" title="Heading"><Heading className="w-4 h-4" /></button>
-          <button onClick={() => insertMarkdown('- ')} className="p-1.5 rounded text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors" title="List"><List className="w-4 h-4" /></button>
+          <button 
+            onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} 
+            className={`p-1.5 rounded transition-colors ${editor?.isActive('heading', { level: 3 }) ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-900'}`}
+            title="Heading"
+          >
+            <Heading className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={() => editor?.chain().focus().toggleBulletList().run()} 
+            className={`p-1.5 rounded transition-colors ${editor?.isActive('bulletList') ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-900'}`}
+            title="Bullet List (Type '- ' or '* ' to start)"
+          >
+            <List className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={() => editor?.chain().focus().toggleOrderedList().run()} 
+            className={`p-1.5 rounded transition-colors ${editor?.isActive('orderedList') ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-900'}`}
+            title="Numbered List (Type '1. ' to start)"
+          >
+            <ListOrdered className="w-4 h-4" />
+          </button>
           <div className="w-px h-4 bg-slate-300 mx-1" />
-          <button onClick={() => insertMarkdown('`', '`')} className="p-1.5 rounded text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors" title="Code"><Code className="w-4 h-4" /></button>
-          <button onClick={() => insertMarkdown('> ')} className="p-1.5 rounded text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors" title="Quote"><Quote className="w-4 h-4" /></button>
-          <button onClick={() => insertMarkdown('$$\n', '\n$$')} className="p-1.5 rounded text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors" title="Block Equation">
+          <button 
+            onClick={() => editor?.chain().focus().toggleCode().run()} 
+            className={`p-1.5 rounded transition-colors ${editor?.isActive('code') ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-900'}`}
+            title="Code"
+          >
+            <Code className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={() => editor?.chain().focus().toggleBlockquote().run()} 
+            className={`p-1.5 rounded transition-colors ${editor?.isActive('blockquote') ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-900'}`}
+            title="Quote"
+          >
+            <Quote className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={() => editor?.chain().focus().insertContent('$$\n\nf(x) = \n\n$$').run()} 
+            className="p-1.5 rounded text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors" 
+            title="Block Equation"
+          >
             <span className="text-[13px] font-mono font-bold">f(x)</span>
           </button>
 
@@ -784,6 +848,7 @@ export const NoteEditorComponent = ({
             <span className="text-xs font-bold tracking-wide">Research</span>
           </button>
 
+
           {/* Save status */}
           <div className="flex items-center ml-3 pl-3 border-l border-slate-200 space-x-2">
             {saveStatus === 'saving' && (
@@ -826,14 +891,38 @@ export const NoteEditorComponent = ({
             className={`flex-1 flex flex-col min-w-0 ${viewMode === 'split' ? 'border-r border-slate-200' : ''}`}
             style={{ backgroundColor: '#f9f6e5' }}
           >
-            <textarea
-              ref={textareaRef}
-              className="flex-1 w-full p-6 md:p-10 border-none focus:outline-none focus:ring-0 resize-none font-mono text-base leading-loose custom-scrollbar"
-              style={{ backgroundColor: '#f9f6e5', color: '#2d3748' }}
-              placeholder="What are we learning today?"
-              value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            />
+            <div 
+              className="flex-1 w-full bg-paper overflow-y-auto custom-scrollbar"
+              onClick={() => editor?.chain().focus().run()}
+            >
+              <EditorContent editor={editor} />
+              
+              {/* Bubble Menu for context-sensitive formatting */}
+              {editor && (
+                <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
+                  <div className="flex bg-white rounded-lg shadow-xl border border-slate-200 p-1 gap-1">
+                    <button
+                      onClick={() => editor.chain().focus().toggleBold().run()}
+                      className={`p-1.5 rounded hover:bg-slate-100 ${editor.isActive('bold') ? 'text-blue-600 bg-blue-50' : 'text-slate-600'}`}
+                    >
+                      <Bold className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => editor.chain().focus().toggleItalic().run()}
+                      className={`p-1.5 rounded hover:bg-slate-100 ${editor.isActive('italic') ? 'text-blue-600 bg-blue-50' : 'text-slate-600'}`}
+                    >
+                      <Italic className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                      className={`p-1.5 rounded hover:bg-slate-100 ${editor.isActive('heading', { level: 3 }) ? 'text-blue-600 bg-blue-50' : 'text-slate-600'}`}
+                    >
+                      <Heading className="w-4 h-4" />
+                    </button>
+                  </div>
+                </BubbleMenu>
+              )}
+            </div>
           </div>
         )}
 
@@ -843,6 +932,7 @@ export const NoteEditorComponent = ({
             {rightPaneMode === 'research' ? (
               <ResearchPanel
                 initialQuery={formData.title}
+                context={formData.content}
                 onInsert={handleInsertFromResearch}
                 onClose={() => setViewMode('write')}
               />
@@ -851,7 +941,7 @@ export const NoteEditorComponent = ({
                 className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar"
                 style={{ backgroundColor: '#f9f6e5' }}
               >
-                <article className="prose prose-base md:prose-lg prose-slate max-w-none">
+                <article className="prose prose-base md:prose-lg prose-slate max-w-none [&>p]:mt-0 [&>p]:mb-4">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkMath]}
                     rehypePlugins={[rehypeKatex]}
