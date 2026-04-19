@@ -5,7 +5,7 @@ import {
   Eye, EyeOff, FileText, BookOpen, AlertCircle, 
   CheckCircle, Bold, Italic, Heading, List, Code, Quote, 
   RefreshCw, ArrowLeft, Cloud, CloudOff, CloudLightning, 
-  Search, Sigma, Edit3, X, Plus, Calendar
+  Search, Sigma, Edit3, X, Plus, Calendar, Sparkles
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Note, Course } from '@/types'
@@ -16,6 +16,7 @@ import rehypeKatex from 'rehype-katex'
 import { ResearchPanel } from './ResearchPanel'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // ─── Math symbol categories ───────────────────────────────────────────────────
 const MATH_SYMBOLS = {
@@ -135,6 +136,7 @@ export const NoteEditorComponent = ({
   const noteRef = useRef<HTMLDivElement>(null)
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
   const [isExportingPDF, setIsExportingPDF] = useState(false)
+  const [isMphathiVisibleOnMobile, setIsMphathiVisibleOnMobile] = useState(false)
 
   // Close math panel on outside click
   useEffect(() => {
@@ -480,7 +482,7 @@ export const NoteEditorComponent = ({
       >
         {/* Read Header */}
         <div 
-          className="px-5 md:px-10 py-4 border-b border-slate-100 shrink-0 flex items-center justify-between z-20 sticky top-0"
+          className="px-5 md:px-10 py-4 border-b border-slate-100 shrink-0 flex items-center justify-between z-20 sticky top-0 overflow-x-auto hide-scrollbar scrollbar-hide"
           style={{ backgroundColor: '#f9f6e5' }}
         >
           <div className="flex items-center gap-3">
@@ -496,11 +498,20 @@ export const NoteEditorComponent = ({
                 {formData.type}
               </span>
               <div className="h-4 w-px bg-slate-200 mx-1" />
-              <p className="text-xs font-bold text-slate-400 truncate max-w-[150px]">{course?.name || 'General'}</p>
+              <p className="text-xs font-bold text-slate-400 truncate max-w-[100px] md:max-w-[150px]">{course?.name || 'General'}</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-max">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMphathiVisibleOnMobile(true)}
+              className="xl:hidden flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span className="text-xs font-bold">Mphathi AI</span>
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -605,6 +616,25 @@ export const NoteEditorComponent = ({
             />
           </div>
         </div>
+
+        {/* Mobile Mphathi Overlay */}
+        <AnimatePresence>
+          {isMphathiVisibleOnMobile && (
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-0 z-[100] bg-white xl:hidden"
+            >
+              <ResearchPanel
+                initialQuery={formData.title}
+                onInsert={handleInsertFromResearch}
+                onClose={() => setIsMphathiVisibleOnMobile(false)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     )
   }
@@ -617,7 +647,7 @@ export const NoteEditorComponent = ({
     >
       {/* Edit Header */}
       <div 
-        className="px-5 md:px-8 py-4 border-b border-slate-200 shrink-0 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between w-full"
+        className="px-5 md:px-8 py-4 border-b border-slate-200 shrink-0 flex flex-nowrap items-center justify-between w-full overflow-x-auto hide-scrollbar scrollbar-hide"
         style={{ backgroundColor: '#f9f6e5' }}
       >
         <div className="flex items-center gap-3 w-full md:w-auto">
@@ -628,18 +658,28 @@ export const NoteEditorComponent = ({
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="flex-1 min-w-0 pr-0 md:pr-4">
+          <div className="flex-1 min-w-0 pr-2">
             <input
               type="text"
               placeholder="Untitled Note"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full text-2xl md:text-3xl font-black bg-transparent border-none focus:outline-none focus:ring-0 placeholder:text-slate-300 truncate"
+              className="w-full text-xl md:text-3xl font-black bg-transparent border-none focus:outline-none focus:ring-0 placeholder:text-slate-300 truncate"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 self-start md:self-auto w-full md:w-auto overflow-x-auto pb-1 md:pb-0 scrollbar-hide hide-scrollbar">
+        <div className="flex items-center gap-2 shrink-0 min-w-max">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsMphathiVisibleOnMobile(true)}
+            className="xl:hidden flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span className="text-xs font-bold">Mphathi</span>
+          </Button>
+
           <select
             value={formData.type}
             onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
@@ -799,52 +839,50 @@ export const NoteEditorComponent = ({
 
         {/* Right pane (preview / research) */}
         {(viewMode === 'preview' || viewMode === 'split') && (
-          <div className="flex-1 flex flex-col bg-paper overflow-hidden relative">
-            {/* Tabs */}
-            <div className="flex border-b border-slate-200 bg-paper shrink-0">
-              <button
-                onClick={() => setRightPaneMode('preview')}
-                className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest transition-colors ${rightPaneMode === 'preview' ? 'text-blue-700 bg-paper border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-800 hover:bg-paper/50'}`}
-              >
-                Output
-              </button>
-              <button
-                onClick={() => setRightPaneMode('research')}
-                className={`flex-1 flex items-center justify-center py-3 text-xs font-bold uppercase tracking-widest transition-colors ${rightPaneMode === 'research' ? 'text-blue-700 bg-paper border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-800 hover:bg-paper/50'}`}
-              >
-                <Search className="w-3.5 h-3.5 mr-1.5" /> Research
-              </button>
-            </div>
-
-            {rightPaneMode === 'preview' ? (
-              <div className="flex-1 overflow-y-auto custom-scrollbar">
-                {debouncedContent ? (
-                  <div className="prose prose-sm md:prose-base prose-slate max-w-none p-6 md:p-10 w-full mx-auto">
-                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
-                      {debouncedContent}
-                    </ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="flex flex-col items-center justify-center text-slate-200 text-center">
-                      <FileText className="w-16 h-16 opacity-30 mb-4" />
-                      <p className="text-sm font-medium tracking-wide opacity-50 uppercase">Preview Render</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+          <div className={`flex-1 flex flex-col min-w-0 ${viewMode === 'split' ? '' : 'w-full'}`}>
+            {rightPaneMode === 'research' ? (
+              <ResearchPanel
+                initialQuery={formData.title}
+                onInsert={handleInsertFromResearch}
+                onClose={() => setViewMode('write')}
+              />
             ) : (
-              <div className="absolute inset-0 top-[40px] overflow-hidden">
-                <ResearchPanel
-                  initialQuery={researchQuery}
-                  onInsert={handleInsertFromResearch}
-                  onClose={() => { setRightPaneMode('preview'); setViewMode(window.innerWidth < 768 ? 'write' : 'split') }}
-                />
+              <div 
+                className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar"
+                style={{ backgroundColor: '#f9f6e5' }}
+              >
+                <article className="prose prose-base md:prose-lg prose-slate max-w-none">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                  >
+                    {debouncedContent || '*Preview content will appear here...*'}
+                  </ReactMarkdown>
+                </article>
               </div>
             )}
           </div>
         )}
       </div>
+
+      {/* Mobile Mphathi Overlay */}
+      <AnimatePresence>
+        {isMphathiVisibleOnMobile && (
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-[100] bg-white xl:hidden"
+          >
+            <ResearchPanel
+              initialQuery={formData.title}
+              onInsert={handleInsertFromResearch}
+              onClose={() => setIsMphathiVisibleOnMobile(false)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

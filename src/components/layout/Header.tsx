@@ -6,16 +6,16 @@ import { motion } from 'framer-motion'
 import { Plus, Calendar, Users, BookOpen, Menu, X, Archive, Search, Clock, FileText, Settings, HelpCircle, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { AuthModal } from '@/components/auth/AuthModal'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 
 interface HeaderProps {
   onCreateCourse?: () => void; // Making it optional
 }
 
 export const Header = ({ onCreateCourse }: HeaderProps) => {
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const { user, isLoading } = useAuth()
@@ -29,10 +29,10 @@ export const Header = ({ onCreateCourse }: HeaderProps) => {
 
   const handleNavigation = (path: string) => {
     if (!user) {
-      setIsAuthModalOpen(true)
+      router.push('/login')
       return
     }
-    window.location.href = path
+    router.push(path)
   }
 
   return (
@@ -106,7 +106,7 @@ export const Header = ({ onCreateCourse }: HeaderProps) => {
               </div>
             ) : (
               <Button 
-                onClick={() => setIsAuthModalOpen(true)} 
+                onClick={() => router.push('/login')} 
                 size="sm" 
                 className="bg-blue-600 text-white font-black px-6 rounded-xl shadow-xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all"
               >
@@ -188,14 +188,6 @@ export const Header = ({ onCreateCourse }: HeaderProps) => {
         </motion.div>
       )}
 
-      {/* Auth Modal */}
-      {isAuthModalOpen && !user && (
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-          onAuthSuccess={() => setIsAuthModalOpen(false)}
-        />
-      )}
     </motion.header>
   )
 }

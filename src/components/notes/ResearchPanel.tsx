@@ -115,8 +115,8 @@ export const ResearchPanel = ({ initialQuery = '', onInsert, onClose }: Research
           {onClose && (
             <button 
               onClick={onClose}
-              className="md:hidden p-1 mr-1 text-slate-400 hover:text-slate-900 transition-colors"
-              title="Back to Editor"
+              className="xl:hidden p-1 mr-1 text-slate-400 hover:text-slate-900 transition-colors bg-slate-100 rounded-full"
+              title="Back"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>

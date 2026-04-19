@@ -13,7 +13,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
 import { useRouter } from 'next/navigation'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
-import { AuthModal } from '@/components/auth/AuthModal'
 import { Layout, LucideIcon, BookOpen, Clock, Users, Zap, ArrowRight, Share2, Sparkles, GraduationCap } from 'lucide-react'
 import { useSpring, useMotionValue } from 'framer-motion'
 
@@ -133,7 +132,6 @@ function HomeContent() {
   const { user, isLoading: isAuthLoading } = useAuth()
   const { courses, notes, timetableEntries, isLoading, refreshData, isOffline, lastSyncTime } = useData()
   const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false)
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
 
   // -- INTERACTIVE MOUSE TRACKING --
   const mouseX = useMotionValue(0)
@@ -228,7 +226,7 @@ function HomeContent() {
               >
                 <Button 
                   size="lg" 
-                  onClick={() => setIsAuthModalOpen(true)}
+                  onClick={() => router.push('/login?mode=signup')}
                   className="h-16 px-10 rounded-2xl text-lg font-black shadow-2xl shadow-blue-600/30 group bg-slate-900 hover:bg-black transition-all"
                 >
                   Get Started Free
@@ -308,7 +306,7 @@ function HomeContent() {
             <h2 className="text-4xl md:text-6xl font-black mb-10 tracking-tighter">Your academic journey, optimized.</h2>
             <Button 
               size="lg" 
-              onClick={() => setIsAuthModalOpen(true)}
+              onClick={() => router.push('/login?mode=signup')}
               className="h-16 px-12 rounded-2xl bg-white text-slate-900 hover:bg-blue-50 text-xl font-black"
             >
               Start Building Now
@@ -319,13 +317,6 @@ function HomeContent() {
         
         <Footer />
         
-        {isAuthModalOpen && (
-          <AuthModal 
-            isOpen={isAuthModalOpen} 
-            onClose={() => setIsAuthModalOpen(false)} 
-            onAuthSuccess={() => router.push('/courses')}
-          />
-        )}
       </div>
     )
   }

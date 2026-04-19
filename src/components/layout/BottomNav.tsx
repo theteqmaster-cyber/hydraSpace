@@ -49,7 +49,7 @@ export const BottomNav = () => {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => alert('Hydra AI: "I am preparing your academic summary. Coming soon in v1.0!"')}
+                onClick={() => window.location.href = '/ai'}
                 className="w-full mb-6 p-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shadow-lg shadow-blue-600/20 overflow-hidden relative group"
               >
                 <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
@@ -58,7 +58,7 @@ export const BottomNav = () => {
                     <Zap className="w-5 h-5 fill-white animate-pulse" />
                   </div>
                   <div className="text-left">
-                    <div className="font-black text-sm uppercase tracking-wider">Ask Hydra AI</div>
+                    <div className="font-black text-sm uppercase tracking-wider">Ask Mphathi AI</div>
                     <div className="text-[10px] text-blue-100 font-bold">Smart Note Summaries</div>
                   </div>
                 </div>
