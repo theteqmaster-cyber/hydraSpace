@@ -3,6 +3,10 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { DataProvider } from '@/contexts/DataContext'
+import { VoiceProvider } from '@/contexts/VoiceContext'
+import { Suspense } from 'react'
+import MphathiOrb from '@/components/voice/MphathiOrb'
+import VoiceCommandListener from '@/components/voice/VoiceCommandListener'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -38,7 +42,13 @@ export default function RootLayout({
       <body className={inter.className}>
         <AuthProvider>
           <DataProvider>
-            {children}
+            <VoiceProvider>
+              {children}
+              <Suspense fallback={null}>
+                <MphathiOrb />
+                <VoiceCommandListener />
+              </Suspense>
+            </VoiceProvider>
           </DataProvider>
         </AuthProvider>
       </body>
