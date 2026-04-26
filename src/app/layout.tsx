@@ -1,5 +1,4 @@
 import { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { DataProvider } from '@/contexts/DataContext'
@@ -8,7 +7,6 @@ import { Suspense } from 'react'
 import MphathiOrb from '@/components/voice/MphathiOrb'
 import VoiceCommandListener from '@/components/voice/VoiceCommandListener'
 
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'HydraSpace - Your Digital Academic Workspace',
@@ -39,7 +37,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body>
         <AuthProvider>
           <DataProvider>
             <VoiceProvider>

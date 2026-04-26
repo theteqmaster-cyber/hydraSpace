@@ -7,7 +7,7 @@ import { useVoice } from '@/contexts/VoiceContext';
 import { useMphathi } from '@/hooks/useMphathi';
 
 export default function MphathiOrb() {
-  const { isListening, isSpeaking, isProcessing, analyzer, transcript } = useVoice();
+  const { isListening, isSpeaking, isProcessing, analyzer, transcript, stopSpeaking } = useVoice();
   const { startMphathi, stopMphathi } = useMphathi();
   const [scale, setScale] = useState(1);
   const [glow, setGlow] = useState(0);
@@ -57,7 +57,16 @@ export default function MphathiOrb() {
       </AnimatePresence>
 
       <motion.button
-        onClick={isListening ? stopMphathi : startMphathi}
+        onClick={() => {
+          if (isSpeaking) {
+            stopSpeaking();
+          } else if (isListening) {
+            stopMphathi();
+          } else if (!isProcessing) {
+            startMphathi();
+          }
+        }}
+        title={isSpeaking ? 'Stop speaking' : isListening ? 'Stop listening' : 'Talk to Mphathi'}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         animate={{
@@ -97,7 +106,12 @@ export default function MphathiOrb() {
                ))}
             </div>
           ) : isSpeaking ? (
-            <Volume2 className="w-6 h-6 animate-pulse" />
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 0.6, repeat: Infinity }}
+            >
+              <X className="w-6 h-6 text-white" />
+            </motion.div>
           ) : isProcessing ? (
             <motion.div
               animate={{ rotate: 360 }}

@@ -268,7 +268,7 @@ export const ResearchPanel = ({ initialQuery = '', context = '', onInsert, onClo
           </button>
         </form>
         <p className="text-[9px] text-center text-slate-400 mt-3 font-bold uppercase tracking-[0.2em]">
-          Empowering focus. Powered by Gemini.
+          Empowering focus. Powered by Groq.
         </p>
       </div>
     </div>

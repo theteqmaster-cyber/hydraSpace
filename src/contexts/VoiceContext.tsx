@@ -11,6 +11,7 @@ interface VoiceContextType {
   analyzer: AnalyserNode | null;
   startListening: () => void;
   stopListening: () => void;
+  stopSpeaking: () => void;
   setIsSpeaking: (val: boolean) => void;
   setIsProcessing: (val: boolean) => void;
   speak: (audioUrl: string) => void;
@@ -63,6 +64,19 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     setIsListening(false);
   };
 
+  const stopSpeaking = () => {
+    // Cancel browser TTS
+    if (typeof window !== 'undefined') {
+      window.speechSynthesis.cancel();
+    }
+    // Also stop HTML audio element if used
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setIsSpeaking(false);
+  };
+
   const speak = (audioUrl: string) => {
     initAudioContext();
     if (audioRef.current) {
@@ -83,6 +97,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         analyzer,
         startListening,
         stopListening,
+        stopSpeaking,
         setIsSpeaking,
         setIsProcessing,
         speak,

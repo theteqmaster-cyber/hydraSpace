@@ -1,10 +1,12 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
+// Mphathi AI — powered by Groq (llama-3.3-70b-versatile)
+// Drop-in replacement for the previous Gemini implementation.
+// The exported function signature is identical so all callers continue to work unchanged.
 
-const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || ''
-const genAI = new GoogleGenerativeAI(apiKey)
+const GROQ_API_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY || ''
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
+const MODEL = 'llama-3.3-70b-versatile'
 
-const SYSTEM_PROMPT = `
-You are Mphathi, a brilliant and supportive AI study assistant. 
+const SYSTEM_PROMPT = `You are Mphathi, a brilliant and supportive AI study assistant.
 Your goal is to help students succeed in their academic journey by providing clear, concise, and accurate information.
 You should encourage focus, productivity, and critical thinking.
 
@@ -17,32 +19,61 @@ Key characteristics of Mphathi:
 - If a student feels "stuck" or has "writer's block", provide prompts, outlines, or brainstorming ideas to get them moving again.
 
 When asked for research, provide well-cited (where possible) and comprehensive summaries.
-If the user wants to "insert" your response, ensure it's formatted in clean markdown that looks good in a note.
-`
+If the user wants to "insert" your response, ensure it's formatted in clean markdown that looks good in a note.`
 
-export async function getGeminiResponse(prompt: string, history: { role: 'user' | 'model'; parts: { text: string }[] }[] = []) {
+type HistoryEntry = {
+  role: 'user' | 'model'
+  parts: { text: string }[]
+}
+
+function toGroqMessages(history: HistoryEntry[], userPrompt: string) {
+  const messages: { role: string; content: string }[] = [
+    { role: 'system', content: SYSTEM_PROMPT },
+  ]
+
+  for (const entry of history) {
+    messages.push({
+      role: entry.role === 'model' ? 'assistant' : 'user',
+      content: entry.parts.map((p) => p.text).join('\n'),
+    })
+  }
+
+  messages.push({ role: 'user', content: userPrompt })
+  return messages
+}
+
+export async function getGeminiResponse(
+  prompt: string,
+  history: HistoryEntry[] = []
+): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' })
-    
-    const chat = model.startChat({
-      history: [
-        {
-          role: 'user',
-          parts: [{ text: "Initial instructions: " + SYSTEM_PROMPT }],
-        },
-        {
-          role: 'model',
-          parts: [{ text: "Understood. I am Mphathi, your AI study assistant. I'm here to help you stay focused and succeed in your studies. How can I help you today?" }],
-        },
-        ...history
-      ],
+    if (!GROQ_API_KEY) {
+      throw new Error('Groq API key is missing. Add NEXT_PUBLIC_GROQ_API_KEY to your .env.local file.')
+    }
+
+    const response = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: toGroqMessages(history, prompt),
+        temperature: 0.7,
+        max_tokens: 2048,
+      }),
     })
 
-    const result = await chat.sendMessage(prompt)
-    const response = await result.response
-    return response.text()
+    if (!response.ok) {
+      const err = await response.text()
+      throw new Error(`Groq API error ${response.status}: ${err}`)
+    }
+
+    const data = await response.json()
+    return data.choices[0]?.message?.content ?? ''
   } catch (error) {
-    console.error('Error fetching Gemini response:', error)
+    console.error('Mphathi (Groq) error:', error)
     throw error
   }
 }
